@@ -87,7 +87,6 @@
             font-weight: bold;
         }
         
-        /* ボタン全般の基本スタイル */
         button {
             color: white;
             border: none;
@@ -102,16 +101,15 @@
             opacity: 0.9;
         }
         
-        /* 🌟 難易度選択ボタン用のスタイル */
         .difficulty-container {
             margin: 20px 0;
             display: flex;
             justify-content: center;
             gap: 15px;
         }
-        .btn-easy { background-color: #4caf50; }     /* 緑 */
-        .btn-normal { background-color: #2196f3; }   /* 青 */
-        .btn-hard { background-color: #ff5722; }     /* 赤 */
+        .btn-easy { background-color: #4caf50; }
+        .btn-normal { background-color: #2196f3; }
+        .btn-hard { background-color: #ff5722; }
         
         .highscore-display {
             font-size: 15px;
@@ -120,7 +118,6 @@
             margin-top: 5px;
         }
         
-        /* プレイ中の難易度バッジ用 */
         #difficulty-badge {
             font-size: 14px;
             font-weight: bold;
@@ -143,15 +140,15 @@
         <div class="difficulty-container">
             <div>
                 <button class="btn-easy" onclick="startGame('easy')">かんたん (90秒)</button>
-                <div id="highscore-easy" class="highscore-display">👑 0 点</div>
+                <div id="highscore-easy" class="highscore-display">👑 最高: 0 点</div>
             </div>
             <div>
                 <button class="btn-normal" onclick="startGame('normal')">ふつう (60秒)</button>
-                <div id="highscore-normal" class="highscore-display">👑 0 点</div>
+                <div id="highscore-normal" class="highscore-display">👑 最高: 0 点</div>
             </div>
             <div>
                 <button class="btn-hard" onclick="startGame('hard')">むずかしい (30秒)</button>
-                <div id="highscore-hard" class="highscore-display">👑 0 点</div>
+                <div id="highscore-hard" class="highscore-display">👑 最高: 0 点</div>
             </div>
         </div>
         
@@ -255,10 +252,10 @@ const romanMap = {
     'ま':['ma'], 'み':['mi'], 'む':['mu'], 'め':['me'], 'も':['mo'],
     'や':['ya'], 'ゆ':['yu'], 'よ':['yo'],
     'ら':['ra'], 'り':['ri'], 'る':['ru'], 'れ':['re'], 'ろ':['ro'],
-    'わ':['wa'], 'を':['wo'], 'ん':['nn','n'],
+    'わ':['wa'], 'を':['wo'], 'ん':['n'],
     'が':['ga'], 'ぎ':['gi'], 'ぐ':['gu'], 'げ':['ge'], 'ご':['go'],
     'ざ':['za'], 'じ':['zi','ji'], 'ず':['zu'], 'ぜ':['ze'], 'ぞ':['zo'],
-    'だ':['da'], 'ぢ':['di'], 'づ':['du'], 'で':['de'], 'ど':['do'],
+    'だ':['da'], 'ぢ':['di','zi','ji'], 'づ':['du','zu'], 'で':['de'], 'ど':['do'],
     'ば':['ba'], 'び':['bi'], 'ぶ':['bu'], 'べ':['be'], 'ぼ':['bo'],
     'ぱ':['pa'], 'ぴ':['pi'], 'ぷ':['pu'], 'ぺ':['pe'], 'ぽ':['po'],
     'きゃ':['kya'], 'きゅ':['kyu'], 'きょ':['kyo'],
@@ -275,9 +272,10 @@ const romanMap = {
     'うぉ':['who','uxo'], 
     'ぁ':['la','xa'], 'ぃ':['li','xi'], 'ぅ':['lu','xu','xtu','ltu'], 'ぇ':['le','xe'], 'ぉ':['lo','xo'],
     'ゃ':['lya','xya'], 'ゅ':['lyu','xyu'], 'ょ':['lyo','xyo'], 'ゎ':['lwa','xwa'],
-    'っ':['ltu','xtu','c','s','t'], // 🌟 ここにヘボン式の子音重ね（cchi, sshi, tssu）用の許可を追加しました！
+    'っ':['ltu','xtu','c','s','t'],
     'ー':['-'], '！':['!'], '、':[','], ' ':[' ']
 };
+
 let currentWord = {};
 let remainingKana = "";
 let currentRomaOptions = []; 
@@ -290,13 +288,11 @@ let isPlaying = false;
 let isAnimating = false;
 let questionPool = [];
 
-// 🌟 難易度管理用の変数
 let currentDifficulty = 'normal';
 let highScores = { easy: 0, normal: 0, hard: 0 };
 
 const bgm = document.getElementById("bgm");
 
-// 🌟 それぞれの難易度のハイスコアを個別に読み込んで表示する関数
 function loadAllHighScores() {
     highScores.easy = parseInt(localStorage.getItem("utsuro_typing_hs_easy") || 0, 10);
     highScores.normal = parseInt(localStorage.getItem("utsuro_typing_hs_normal") || 0, 10);
@@ -307,7 +303,6 @@ function loadAllHighScores() {
     document.getElementById("highscore-hard").innerText = `👑 最高: ${highScores.hard} 点`;
 }
 
-// 起動時に全ハイスコアをロード
 loadAllHighScores();
 
 function shufflePool() {
@@ -318,11 +313,8 @@ function shufflePool() {
     }
 }
 
-// 🌟 引数で選ばれた難易度（diff）を受け取るように変更しました
 function startGame(diff) {
     currentDifficulty = diff;
-    
-    // 難易度に応じた制限時間と画面バッジの設定
     const badge = document.getElementById("difficulty-badge");
     if (diff === 'easy') {
         timeLeft = 90;
@@ -366,19 +358,61 @@ function startGame(diff) {
     }, 1000);
 }
 
+// 🌟 最強進化版：長音省略に加えて、後ろの文字をチェックして「ん ➔ n」に安全圧縮するクリーナー
+function applyHepburnMacron(kana) {
+    let noBar = kana.replace(/ー/g, "");
+    let result = "";
+    let i = 0;
+    while (i < noBar.length) {
+        let char = noBar[i];
+        let next = noBar[i + 1];
+        
+        // 【新機能】「ん」の自動1文字化判定
+        if (char === "ん") {
+            // 後ろに文字がない（語尾の「ん」）、または後ろの文字が母音(あいうえお)やヤ行(やゆよ)以外なら、単体の「ん」としてそのまま通す
+            if (!next || !["あ","い","う","え","お","や","ゆ","よ","ぁ","ぃ","ぅ","ぇ","ぉ","ゃ","ゅ","ょ"].includes(next)) {
+                result += char; 
+                i++;
+                continue; // 次の文字へ。これでタイピング時に「n」1回だけで突破できるようになります！
+            }
+        }
+        
+        // おう・おお の長音省略
+        if ((char === "お" || char === "こ" || char === "そ" || char === "と" || char === "の" || char === "ほ" || char === "も" || char === "よ" || char === "ろ" || char === "ご" || char === "ぞ" || char === "ど" || char === "ぼ" || char === "ぽ" || char === "きょ" || char === "しょ" || char === "ちょ" || char === "にょ" || char === "ひょ" || char === "みょ" || char === "りょ" || char === "ぎょ" || char === "じょ" || char === "びょ" || char === "ぴゃ") && (next === "う" || next === "お")) {
+            result += char;
+            i += 2;
+        } else if (i + 2 <= noBar.length && ["きょ", "しゃ", "しゅ", "しょ", "ちゃ", "ちゅ", "ちょ", "にゃ", "にゅ", "にょ", "ひゃ", "ひゅ", "ひょ", "みゃ", "みゅ", "みょ", "りゃ", "りゅ", "りょ", "ぎゃ", "ぎゅ", "ぎょ", "じゃ", "じゅ", "じょ", "びゃ", "びゅ", "びょ", "ぴゃ", "ぴゅ", "ぴょ"].includes(noBar.substring(i, i+2))) {
+            let doubleChar = noBar.substring(i, i+2);
+            let nextNext = noBar[i + 2];
+            if (nextNext === "う" || nextNext === "お") {
+                result += doubleChar;
+                i += 3;
+            } else {
+                result += doubleChar;
+                i += 2;
+            }
+        } else {
+            result += char;
+            i++;
+        }
+    }
+    return result;
+}
+
 function nextWord() {
     if (questionPool.length === 0) {
         shufflePool();
     }
     currentWord = questionPool.pop();
-    remainingKana = currentWord.kana;
+    
+    remainingKana = applyHepburnMacron(currentWord.kana);
     typedRoma = "";
     
     document.getElementById("kanji-display").innerText = currentWord.kanji;
-    document.getElementById("kana-display").innerText = currentWord.kana;
+    document.getElementById("kana-display").innerText = currentWord.kana; 
     
     parseNextRoma();
-    displayRoma = makeDefaultRoma(currentWord.kana);
+    displayRoma = makeDefaultRoma(remainingKana);
     updateDisplay();
 }
 
@@ -494,15 +528,12 @@ function endGame() {
     document.getElementById("game-screen").style.display = "none";
     document.getElementById("result-area").style.display = "block";
     
-    // 🌟 難易度の英語名を、表示用の可愛い日本語に変換します
     let diffName = "ふつう";
     if (currentDifficulty === 'easy') diffName = "かんたん";
     if (currentDifficulty === 'hard') diffName = "むずかしい";
     
-    // 🌟 結果表示の文字に、難易度（日本語）をドッキングさせました！
-    document.getElementById("final-score-text").innerText = `今回のスコア（${diffName}）: ${score} 点`;
+   document.getElementById("final-score-text").innerText = `今回のスコア（${diffName}）: ${score} 点`;
     
-    // 現在選択されている難易度のハイスコア（LocalStorageのキー）を動的に決定
     const storageKey = "utsuro_typing_hs_" + currentDifficulty;
     const pastHighScore = highScores[currentDifficulty];
     
@@ -513,11 +544,11 @@ function endGame() {
         document.getElementById("new-record-text").style.display = "none";
     }
     
-    // 全難易度のスコア表示を最新に更新
     loadAllHighScores();
     
     alert(`タイムアップ！あなたのスコアは ${score} でした！`);
-}</script>
+}
+</script>
 
 </body>
 </html>
