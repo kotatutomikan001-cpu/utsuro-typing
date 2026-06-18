@@ -86,27 +86,49 @@
             font-size: 18px;
             font-weight: bold;
         }
+        
+        /* ボタン全般の基本スタイル */
         button {
-            background-color: #5c6bc0;
             color: white;
             border: none;
             padding: 12px 30px;
             font-size: 18px;
             border-radius: 25px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: opacity 0.2s, background-color 0.2s;
+            font-weight: bold;
         }
         button:hover {
-            background-color: #3f51b5;
+            opacity: 0.9;
         }
         
-        /* 🌟 ハイスコア表示用のスタイル */
+        /* 🌟 難易度選択ボタン用のスタイル */
+        .difficulty-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .btn-easy { background-color: #4caf50; }     /* 緑 */
+        .btn-normal { background-color: #2196f3; }   /* 青 */
+        .btn-hard { background-color: #ff5722; }     /* 赤 */
+        
         .highscore-display {
-            font-size: 16px;
+            font-size: 15px;
             color: #ffb300;
             font-weight: bold;
-            margin-top: 10px;
-            margin-bottom: 15px;
+            margin-top: 5px;
+        }
+        
+        /* プレイ中の難易度バッジ用 */
+        #difficulty-badge {
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -116,21 +138,34 @@
     <h1>氷室うつろ タイピングゲーム</h1>
     
     <div id="start-screen">
-        <p>氷室うつろに関する言葉をどれだけタイピングできるか挑戦です！</p>
+        <p>挑戦する難易度を選択してください！</p>
         
-        <!-- 🌟 スタート画面に最初から現在のハイスコアを出すようにしました -->
-        <div id="main-highscore" class="highscore-display">👑 これまでの最高スコア: 0 点</div>
+        <div class="difficulty-container">
+            <div>
+                <button class="btn-easy" onclick="startGame('easy')">かんたん (90秒)</button>
+                <div id="highscore-easy" class="highscore-display">👑 0 点</div>
+            </div>
+            <div>
+                <button class="btn-normal" onclick="startGame('normal')">ふつう (60秒)</button>
+                <div id="highscore-normal" class="highscore-display">👑 0 点</div>
+            </div>
+            <div>
+                <button class="btn-hard" onclick="startGame('hard')">むずかしい (30秒)</button>
+                <div id="highscore-hard" class="highscore-display">👑 0 点</div>
+            </div>
+        </div>
         
-        <p style="color: #d32f2f; font-size: 14px; font-weight: bold; margin-bottom: 15px;">⚠️ 注：スタートを押すと音楽が流れます</p>
-        <button onclick="startGame()">ゲームスタート</button>
+        <p style="color: #d32f2f; font-size: 14px; font-weight: bold; margin-bottom: 15px;">⚠️ 注：ボタンを押すと音楽が流れます</p>
+        
         <div id="result-area" style="display: none;">
             <p id="final-score-text" style="font-size: 20px; font-weight: bold; margin-top: 20px; color: #1a237e;"></p>
-            <!-- 🌟 終了画面にもハイスコアを表示します -->
-            <p id="new-record-text" style="font-size: 18px; font-weight: bold; color: #e53935; display: none; margin-top: 5px;">🎉 本日の最高記録更新！！</p>
+            <p id="new-record-text" style="font-size: 18px; font-weight: bold; color: #e53935; display: none; margin-top: 5px;">🎉 この難易度での最高記録更新！！</p>
         </div>
     </div>
 
     <div id="game-screen" style="display: none;">
+        <div id="difficulty-badge"></div>
+        
         <div class="game-layout">
             <div class="image-area">
                 <img id="utsuro-img" src="utsuro_normal.png" alt="氷室うつろ">
@@ -150,7 +185,6 @@
 <audio id="bgm" src="bgm.mp3" loop></audio>
 
 <script>
-// 「おろかすぎる」の誤字もバッチリ修正済みです！
 const wordList = [
     { kanji: "ごきげんよう", kana: "ごきげんよう" },
     { kanji: "ごしゅ", kana: "ごしゅ" },
@@ -257,18 +291,25 @@ let isPlaying = false;
 let isAnimating = false;
 let questionPool = [];
 
+// 🌟 難易度管理用の変数
+let currentDifficulty = 'normal';
+let highScores = { easy: 0, normal: 0, hard: 0 };
+
 const bgm = document.getElementById("bgm");
 
-// 🌟 ブラウザに保存されているハイスコアを読み込む関数
-function loadHighScore() {
-    // 保存されたスコアが無ければ「0」にする
-    const currentHighScore = localStorage.getItem("utsuro_typing_highscore") || 0;
-    document.getElementById("main-highscore").innerText = `👑 これまでの最高スコア: ${currentHighScore} 点`;
-    return parseInt(currentHighScore, 10);
+// 🌟 それぞれの難易度のハイスコアを個別に読み込んで表示する関数
+function loadAllHighScores() {
+    highScores.easy = parseInt(localStorage.getItem("utsuro_typing_hs_easy") || 0, 10);
+    highScores.normal = parseInt(localStorage.getItem("utsuro_typing_hs_normal") || 0, 10);
+    highScores.hard = parseInt(localStorage.getItem("utsuro_typing_hs_hard") || 0, 10);
+    
+    document.getElementById("highscore-easy").innerText = `👑 最高: ${highScores.easy} 点`;
+    document.getElementById("highscore-normal").innerText = `👑 最高: ${highScores.normal} 点`;
+    document.getElementById("highscore-hard").innerText = `👑 最高: ${highScores.hard} 点`;
 }
 
-// ゲーム起動時にハイスコアを画面に表示
-let highScore = loadHighScore();
+// 起動時に全ハイスコアをロード
+loadAllHighScores();
 
 function shufflePool() {
     questionPool = [...wordList];
@@ -278,13 +319,32 @@ function shufflePool() {
     }
 }
 
-function startGame() {
+// 🌟 引数で選ばれた難易度（diff）を受け取るように変更しました
+function startGame(diff) {
+    currentDifficulty = diff;
+    
+    // 難易度に応じた制限時間と画面バッジの設定
+    const badge = document.getElementById("difficulty-badge");
+    if (diff === 'easy') {
+        timeLeft = 90;
+        badge.innerText = "かんたんモード (90秒)";
+        badge.style.backgroundColor = "#4caf50";
+    } else if (diff === 'hard') {
+        timeLeft = 30;
+        badge.innerText = "むずかしいモード (30秒)";
+        badge.style.backgroundColor = "#ff5722";
+    } else {
+        timeLeft = 60;
+        badge.innerText = "ふつうモード (60秒)";
+        badge.style.backgroundColor = "#2196f3";
+    }
+
     document.getElementById("start-screen").style.display = "none";
     document.getElementById("result-area").style.display = "none";
-    document.getElementById("new-record-text").style.display = "none"; // 新記録文字を隠す
+    document.getElementById("new-record-text").style.display = "none";
     document.getElementById("game-screen").style.display = "block";
+    
     score = 0;
-    timeLeft = 60;
     isPlaying = true;
     isAnimating = false;
     document.getElementById("score").innerText = score;
@@ -431,27 +491,32 @@ function endGame() {
     
     bgm.pause();
     
-    // 1. 先に画面の切り替えをすべて完了させます
     document.getElementById("start-screen").style.display = "block";
     document.getElementById("game-screen").style.display = "none";
     document.getElementById("result-area").style.display = "block";
     
-    // 2. 今回のスコアを画面に表示
-    document.getElementById("final-score-text").innerText = `今回のスコア: ${score} 点`;
+    // 🌟 難易度の英語名を、表示用の可愛い日本語に変換します
+    let diffName = "ふつう";
+    if (currentDifficulty === 'easy') diffName = "かんたん";
+    if (currentDifficulty === 'hard') diffName = "むずかしい";
     
-    // 3. スコア判定（これまでの記録を超えていたらセーブ）
-    if (score > highScore) {
-        highScore = score;
-        localStorage.setItem("utsuro_typing_highscore", score);
-        document.getElementById("new-record-text").style.display = "block"; // お祝いメッセージを表示！
+    // 🌟 結果表示の文字に、難易度（日本語）をドッキングさせました！
+    document.getElementById("final-score-text").innerText = `今回のスコア（${diffName}）: ${score} 点`;
+    
+    // 現在選択されている難易度のハイスコア（LocalStorageのキー）を動的に決定
+    const storageKey = "utsuro_typing_hs_" + currentDifficulty;
+    const pastHighScore = highScores[currentDifficulty];
+    
+    if (score > pastHighScore) {
+        localStorage.setItem(storageKey, score);
+        document.getElementById("new-record-text").style.display = "block";
     } else {
         document.getElementById("new-record-text").style.display = "none";
     }
     
-    // 4. 最後に、メインのハイスコア表示を最新の記録に書き換えます
-    document.getElementById("main-highscore").innerText = `👑 これまでの最高スコア: ${highScore} 点`;
+    // 全難易度のスコア表示を最新に更新
+    loadAllHighScores();
     
-    // 5. アラートを出す
     alert(`タイムアップ！あなたのスコアは ${score} でした！`);
 }</script>
 
