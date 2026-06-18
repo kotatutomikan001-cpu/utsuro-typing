@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>氷室うつろのタイピングゲーム</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #game-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 750px;
+        }
+        h1 {
+            color: #5c6bc0;
+            margin-bottom: 20px;
+        }
+        .game-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+        .image-area {
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fafafa;
+            border-radius: 10px;
+            border: 2px dashed #e0e0e0;
+            overflow: hidden;
+        }
+        #utsuro-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+        .text-area {
+            flex: 1;
+            text-align: left;
+        }
+        #kanji-display {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #1a237e;
+            min-height: 40px;
+        }
+        #kana-display {
+            font-size: 16px;
+            color: #757575;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            min-height: 22px;
+        }
+        #typing-display {
+            font-size: 24px;
+            font-family: monospace;
+            letter-spacing: 2px;
+            background-color: #eceff1;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 35px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .typed { color: #b0bec5; }
+        .untyped { color: #d32f2f; font-weight: bold; }
+        #score-display {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        button {
+            background-color: #5c6bc0;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #3f51b5;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>氷室うつろ タイピングゲーム</h1>
+    
+    <div id="start-screen">
+        <p>氷室うつろに関する言葉をどれだけタイピングできるか挑戦です！</p>
+        <button onclick="startGame()">ゲームスタート</button>
+        
+        <!-- 🌟 音量調節バーを完全に削除しました -->
+
+        <div id="result-area" style="display: none;">
+            <p id="final-score-text" style="font-size: 20px; font-weight: bold; margin-top: 20px; color: #1a237e;"></p>
+        </div>
+    </div>
+
+    <div id="game-screen" style="display: none;">
+        <div class="game-layout">
+            <div class="image-area">
+                <img id="utsuro-img" src="utsuro_normal.png" alt="氷室うつろ">
+            </div>
+            
+            <div class="text-area">
+                <div id="kanji-display"></div>
+                <div id="kana-display"></div>
+            </div>
+        </div>
+        
+        <div id="typing-display"></div>
+        <div id="score-display">残り時間: <span id="timer">60</span>秒 | スコア: <span id="score">0</span></div>
+    </div>
+</div>
+
+<audio id="bgm" src="bgm.mp3" loop></audio>
+
+<script>
+const wordList = [
+    { kanji: "ごきげんよう", kana: "ごきげんよう" },
+    { kanji: "ごしゅ", kana: "ごしゅ" },
+    { kanji: "ご主人様", kana: "ごしゅじんさま" },
+    { kanji: "キッズ", kana: "きっず" },
+    { kanji: "皆様", kana: "みなさま" },
+    { kanji: "シュウォッチ", kana: "しゅうぉっち" },
+    { kanji: "しゅがしゅが", kana: "しゅがしゅが" },
+    { kanji: "しゅがキャン", kana: "しゅがきゃん" },
+    { kanji: "涅槃", kana: "ねはん" },
+    { kanji: "氷室うつろ", kana: "ひむろうつろ" },
+    { kanji: "うつろジオ", kana: "うつろじお" },
+    { kanji: "見ておけうつろ", kana: "みておけうつろ" },
+    { kanji: "星めぐり学園", kana: "ほしめぐりがくえん" },
+    { kanji: "ワビスケ", kana: "わびすけ" },
+    { kanji: "うつ郎", kana: "うつろう" },
+    { kanji: "さがってよいぞ", kana: "さがってよいぞ" },
+    { kanji: "お待たせしました、最推しです", kana: "おまたせしましたさいおしです" },
+    { kanji: "ラルフさん", kana: "らるふさん" },
+    { kanji: "サクライさん", kana: "さくらいさん" },
+    { kanji: "ミニうつろ", kana: "みにうつろ" },
+    { kanji: "ドーナツさん", kana: "どーなつさん" },
+    { kanji: "朝活", kana: "あさかつ" },
+    { kanji: "任せてくださいよ！", kana: "まかせてくださいよ" },
+    { kanji: "まかセロリ！", kana: "まかせろり" },
+    { kanji: "ちゅう", kana: "ちゅう" },
+    { kanji: "ごちゅちゅ", kana: "ごちゅちゅ" },
+    { kanji: "生ハム原木", kana: "なまはむげんぼく" },
+    { kanji: "無人島", kana: "むじんとう" },
+    { kanji: "ちっちゃこい", kana: "ちっちゃこい" },
+    { kanji: "ぼだっこ", kana: "ぼだっこ" },
+    { kanji: "オランダせんべい", kana: "おらんだせんべい" },
+    { kanji: "カスのおねえちゃん", kana: "かすのおねえちゃん" },
+    { kanji: "ベースブレッド", kana: "べーすぶれっど" },
+    { kanji: "メイド", kana: "めいど" },
+    { kanji: "うちゅちゅ", kana: "うちゅちゅ" },
+    { kanji: "悪代官", kana: "あくだいかん" },
+    { kanji: "腹黒主水之助助兵衛", kana: "はらぐろもんどのすけすけべえ" },
+    { kanji: "ばんえい競馬", kana: "ばんえいけいば" },
+    { kanji: "よろしくお願いします", kana: "よろしくおねがいします" },
+    { kanji: "パクチー", kana: "ぱくちー" },
+    { kanji: "うつろスキー", kana: "うつろすきー" },
+    { kanji: "人生縛り", kana: "じんせいしばり" },
+    { kanji: "ジューンブライド", kana: "じゅーんぶらいど" },
+    { kanji: "ボーントゥスティール", kana: "ぼーんとぅすてぃーる" },
+    { kanji: "超神髄", kana: "ちょうしんずい" },
+    { kanji: "ボッシュ", kana: "ぼっしゅ" },
+    { kanji: "うー！ぱぁん！", kana: "うーぱぁん" },
+    { kanji: "同時視聴", kana: "どうじしちょう" },
+    { kanji: "うつロンダリング", kana: "うつろんだりんぐ" },
+    { kanji: "お母様", kana: "おかあさま" }
+];
+
+const romanMap = {
+    'あ':['a'], 'い':['i','yi'], 'う':['u','wu'], 'え':['e','ye'], 'お':['o'],
+    'か':['ka'], 'き':['ki'], 'く':['ku'], 'け':['ke'], 'こ':['ko'],
+    'さ':['sa'], 'し':['si','shi'], 'す':['su'], 'せ':['se'], 'そ':['so'],
+    'た':['ta'], 'ち':['ti','chi'], 'つ':['tu','tsu'], 'て':['te'], 'と':['to'],
+    'な':['na'], 'に':['ni'], 'ぬ':['nu'], 'ね':['ne'], 'の':['no'],
+    'は':['ha'], 'ひ':['hi'], 'ふ':['fu','hu'], 'へ':['he'], 'ほ':['ho'],
+    'ま':['ma'], 'み':['mi'], 'む':['mu'], 'め':['me'], 'も':['mo'],
+    'や':['ya'], 'ゆ':['yu'], 'よ':['yo'],
+    'ら':['ra'], 'り':['ri'], 'る':['ru'], 'れ':['re'], 'ろ':['ro'],
+    'わ':['wa'], 'を':['wo'], 'ん':['nn','n'],
+    'が':['ga'], 'ぎ':['gi'], 'ぐ':['gu'], 'げ':['ge'], 'ご':['go'],
+    'ざ':['za'], 'じ':['zi','ji'], 'ず':['zu'], 'ぜ':['ze'], 'ぞ':['zo'],
+    'だ':['da'], 'ぢ':['di'], 'づ':['du'], 'で':['de'], 'ど':['do'],
+    'ば':['ba'], 'び':['bi'], 'ぶ':['bu'], 'べ':['be'], 'ぼ':['bo'],
+    'ぱ':['pa'], 'ぴ':['pi'], 'ぷ':['pu'], 'ぺ':['pe'], 'ぽ':['po'],
+    'きゃ':['kya'], 'きゅ':['kyu'], 'きょ':['kyo'],
+    'しゃ':['sya','sha'], 'しゅ':['syu','shu'], 'しょ':['syo','sho'],
+    'ちゃ':['tya','cha'], 'ちゅ':['tyu','chu'], 'ちょ':['tyo','cho'],
+    'にゃ':['nya'], 'にゅ':['nyu'], 'にょ':['nyo'],
+    'ひゃ':['hya'], 'ひゅ':['hyu'], 'ひょ':['hyo'],
+    'みゃ':['mya'], 'みゅ':['myu'], 'みょ':['myo'],
+    'りゃ':['rya'], 'りゅ':['ryu'], 'りょ':['ryo'],
+    'ぎゃ':['gya'], 'ぎゅ':['gyu'], 'ぎょ':['gyo'],
+    'じゃ':['zya','ja'], 'じゅ':['zyu','ju'], 'じょ':['zyo','jo'],
+    'びゃ':['bya'], 'びゅ':['byu'], 'びょ':['byo'],
+    'ぴゃ':['pya'], 'ぴゅ':['pyu'], 'ぴょ':['pyo'],
+    'うぉ':['who','uxo'], 
+    'ぁ':['la','xa'], 'ぃ':['li','xi'], 'ぅ':['lu','xu','xtu','ltu'], 'ぇ':['le','xe'], 'ぉ':['lo','xo'],
+    'ゃ':['lya','xya'], 'ゅ':['lyu','xyu'], 'ょ':['lyo','xyo'], 'ゎ':['lwa','xwa'],
+    'っ':['ltu','xtu'],
+    'ー':['-'], '！':['!'], '、':[','], ' ':[' ']
+};
+
+let currentWord = {};
+let remainingKana = "";
+let currentRomaOptions = []; 
+let displayRoma = "";        
+let typedRoma = "";         
+let score = 0;
+let timeLeft = 60;
+let timerInterval;
+let isPlaying = false;
+let isAnimating = false;
+let questionPool = [];
+
+const bgm = document.getElementById("bgm");
+
+function shufflePool() {
+    questionPool = [...wordList];
+    for (let i = questionPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questionPool[i], questionPool[j]] = [questionPool[j], questionPool[i]];
+    }
+}
+
+function startGame() {
+    document.getElementById("start-screen").style.display = "none";
+    document.getElementById("result-area").style.display = "none";
+    document.getElementById("game-screen").style.display = "block";
+    score = 0;
+    timeLeft = 60;
+    isPlaying = true;
+    isAnimating = false;
+    document.getElementById("score").innerText = score;
+    document.getElementById("timer").innerText = timeLeft;
+    document.getElementById("utsuro-img").src = "utsuro_normal.png";
+    
+    // 🌟 音量を一律「0.2（20%）」の小さめ固定に設定しました
+    bgm.volume = 0.2;
+    bgm.currentTime = 0; 
+    bgm.play().catch(err => {
+        console.log("BGMの再生に失敗しました");
+    });
+
+    shufflePool();
+    nextWord();
+    
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").innerText = timeLeft;
+        if (timeLeft <= 0) endGame();
+    }, 1000);
+}
+
+function nextWord() {
+    if (questionPool.length === 0) {
+        shufflePool();
+    }
+    currentWord = questionPool.pop();
+    remainingKana = currentWord.kana;
+    typedRoma = "";
+    
+    document.getElementById("kanji-display").innerText = currentWord.kanji;
+    document.getElementById("kana-display").innerText = currentWord.kana;
+    
+    parseNextRoma();
+    displayRoma = makeDefaultRoma(currentWord.kana);
+    updateDisplay();
+}
+
+function parseNextRoma() {
+    if (remainingKana.length === 0) {
+        currentRomaOptions = [];
+        return;
+    }
+    if (remainingKana.startsWith("っ") && remainingKana.length > 1) {
+        const nextChar = remainingKana.charAt(1);
+        const nextRomaList = romanMap[nextChar] || [nextChar.toLowerCase()];
+        currentRomaOptions = [...romanMap['っ'], ...nextRomaList.map(r => r.charAt(0))];
+        return;
+    }
+    if (remainingKana.length >= 2) {
+        const doubleChar = remainingKana.substring(0, 2);
+        if (romanMap[doubleChar]) {
+            currentRomaOptions = romanMap[doubleChar];
+            return;
+        }
+    }
+    const singleChar = remainingKana.substring(0, 1);
+    currentRomaOptions = romanMap[singleChar] || [singleChar.toLowerCase()];
+}
+
+function makeDefaultRoma(kana) {
+    let res = "";
+    let i = 0;
+    while (i < kana.length) {
+        if (kana[i] === "っ" && i + 1 < kana.length) {
+            let next = romanMap[kana[i+1]];
+            res += next ? next[0].charAt(0) : "x";
+            i++;
+            continue;
+        }
+        if (i + 1 < kana.length && romanMap[kana.substring(i, i+2)]) {
+            res += romanMap[kana.substring(i, i+2)][0];
+            i += 2;
+        } else {
+            res += (romanMap[kana[i]] ? romanMap[kana[i]][0] : kana[i].toLowerCase());
+            i++;
+        }
+    }
+    return res;
+}
+
+function updateDisplay() {
+    let html = `<span class="typed">${typedRoma}</span><span class="untyped">${displayRoma.substring(typedRoma.length)}</span>`;
+    document.getElementById("typing-display").innerHTML = html;
+}
+
+window.addEventListener("keydown", (e) => {
+    if (!isPlaying || isAnimating) return;
+    if (e.key.length !== 1) return;
+    
+    const pressed = e.key.toLowerCase();
+    let matchedOption = currentRomaOptions.find(opt => opt.startsWith(pressed));
+    
+    if (matchedOption) {
+        typedRoma += pressed;
+        
+        if (remainingKana.startsWith("っ") && remainingKana.length > 1 && !romanMap['っ'].includes(pressed + currentRomaOptions.find(opt => opt.startsWith(pressed)).substring(1))) {
+            remainingKana = remainingKana.substring(1);
+            displayRoma = typedRoma + makeDefaultRoma(remainingKana);
+            parseNextRoma();
+            updateDisplay();
+            return;
+        }
+
+        currentRomaOptions = currentRomaOptions
+            .filter(opt => opt.startsWith(pressed))
+            .map(opt => opt.substring(1))
+            .filter(opt => opt.length > 0);
+            
+        if (currentRomaOptions.length === 0) {
+            if (remainingKana.length >= 2 && romanMap[remainingKana.substring(0, 2)]) {
+                remainingKana = remainingKana.substring(2);
+            } else {
+                remainingKana = remainingKana.substring(1);
+            }
+            displayRoma = typedRoma + makeDefaultRoma(remainingKana);
+            parseNextRoma();
+        } else {
+            let nextPredict = matchedOption.substring(1);
+            displayRoma = typedRoma + nextPredict + makeDefaultRoma(remainingKana.substring(remainingKana.length >= 2 && romanMap[remainingKana.substring(0, 2)] ? 2 : 1));
+        }
+        
+        updateDisplay();
+        
+        if (remainingKana.length === 0 && currentRomaOptions.length === 0) {
+            score += 10;
+            document.getElementById("score").innerText = score;
+            
+            isAnimating = true;
+            document.getElementById("utsuro-img").src = "utsuro_clear.png";
+            
+            setTimeout(() => {
+                document.getElementById("utsuro-img").src = "utsuro_normal.png";
+                isAnimating = false;
+                nextWord();
+            }, 400);
+        }
+    }
+});
+
+function endGame() {
+    clearInterval(timerInterval);
+    isPlaying = false;
+    
+    bgm.pause();
+    
+    document.getElementById("start-screen").style.display = "block";
+    document.getElementById("game-screen").style.display = "none";
+    
+    document.getElementById("final-score-text").innerText = `今回のスコア: ${score} 点`;
+    document.getElementById("result-area").style.display = "block";
+    
+    alert(`タイムアップ！あなたのスコアは ${score} でした！`);
+}
+</script>
+
+</body>
+</html>
