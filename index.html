@@ -27,6 +27,17 @@
             color: #5c6bc0;
             margin-bottom: 20px;
         }
+        /* 🌟 PC専用バナー用のスタイリング */
+        .pc-only-banner {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 2px solid #ef9a9a;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
         .game-layout {
             display: flex;
             align-items: center;
@@ -135,6 +146,10 @@
     <h1>氷室うつろ タイピングゲーム</h1>
     
     <div id="start-screen">
+        <div class="pc-only-banner">
+            ⚠️ 物理キーボード必須（PC専用ゲームです。スマホ・タブレット非対応）
+        </div>
+
         <p>挑戦する難易度を選択してください！</p>
         
         <div class="difficulty-container">
@@ -358,7 +373,6 @@ function startGame(diff) {
     }, 1000);
 }
 
-// 🌟 最強進化版：長音省略に加えて、後ろの文字をチェックして「ん ➔ n」に安全圧縮するクリーナー
 function applyHepburnMacron(kana) {
     let noBar = kana.replace(/ー/g, "");
     let result = "";
@@ -367,17 +381,14 @@ function applyHepburnMacron(kana) {
         let char = noBar[i];
         let next = noBar[i + 1];
         
-        // 【新機能】「ん」の自動1文字化判定
         if (char === "ん") {
-            // 後ろに文字がない（語尾の「ん」）、または後ろの文字が母音(あいうえお)やヤ行(やゆよ)以外なら、単体の「ん」としてそのまま通す
             if (!next || !["あ","い","う","え","お","や","ゆ","よ","ぁ","ぃ","ぅ","ぇ","ぉ","ゃ","ゅ","ょ"].includes(next)) {
                 result += char; 
                 i++;
-                continue; // 次の文字へ。これでタイピング時に「n」1回だけで突破できるようになります！
+                continue; 
             }
         }
         
-        // おう・おお の長音省略
         if ((char === "お" || char === "こ" || char === "そ" || char === "と" || char === "の" || char === "ほ" || char === "も" || char === "よ" || char === "ろ" || char === "ご" || char === "ぞ" || char === "ど" || char === "ぼ" || char === "ぽ" || char === "きょ" || char === "しょ" || char === "ちょ" || char === "にょ" || char === "ひょ" || char === "みょ" || char === "りょ" || char === "ぎょ" || char === "じょ" || char === "びょ" || char === "ぴゃ") && (next === "う" || next === "お")) {
             result += char;
             i += 2;
@@ -532,7 +543,7 @@ function endGame() {
     if (currentDifficulty === 'easy') diffName = "かんたん";
     if (currentDifficulty === 'hard') diffName = "むずかしい";
     
-   document.getElementById("final-score-text").innerText = `今回のスコア（${diffName}）: ${score} 点`;
+    document.getElementById("final-score-text").innerText = `今回のスコア（${diffName}）: ${score} 点`;
     
     const storageKey = "utsuro_typing_hs_" + currentDifficulty;
     const pastHighScore = highScores[currentDifficulty];
