@@ -431,26 +431,29 @@ function endGame() {
     
     bgm.pause();
     
+    // 1. 先に画面の切り替えをすべて完了させます
     document.getElementById("start-screen").style.display = "block";
     document.getElementById("game-screen").style.display = "none";
-    
-    document.getElementById("final-score-text").innerText = `今回のスコア: ${score} 点`;
-    
-    // 🌟 スコアがこれまでのハイスコアを上回ったか判定
-    if (score > highScore) {
-        highScore = score;
-        localStorage.setItem("utsuro_typing_highscore", score); // ブラウザに新しい記録をセーブ
-        document.getElementById("new-record-text").style.display = "block"; // 新記録の文字をピカッと表示
-    }
-    
-    // メインのハイスコア表示を最新のものに更新
-    highScore = loadHighScore();
-    
     document.getElementById("result-area").style.display = "block";
     
+    // 2. 今回のスコアを画面に表示
+    document.getElementById("final-score-text").innerText = `今回のスコア: ${score} 点`;
+    
+    // 3. スコア判定（これまでの記録を超えていたらセーブ）
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("utsuro_typing_highscore", score);
+        document.getElementById("new-record-text").style.display = "block"; // お祝いメッセージを表示！
+    } else {
+        document.getElementById("new-record-text").style.display = "none";
+    }
+    
+    // 4. 最後に、メインのハイスコア表示を最新の記録に書き換えます
+    document.getElementById("main-highscore").innerText = `👑 これまでの最高スコア: ${highScore} 点`;
+    
+    // 5. アラートを出す
     alert(`タイムアップ！あなたのスコアは ${score} でした！`);
-}
-</script>
+}</script>
 
 </body>
 </html>
