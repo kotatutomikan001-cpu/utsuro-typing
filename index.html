@@ -108,12 +108,8 @@
     
     <div id="start-screen">
         <p>氷室うつろに関する言葉をどれだけタイピングできるか挑戦です！</p>
-        <!-- 🌟 注意喚起の文章を追加しました -->
         <p style="color: #d32f2f; font-size: 14px; font-weight: bold; margin-bottom: 15px;">⚠️ 注：スタートを押すと音楽が流れます</p>
         <button onclick="startGame()">ゲームスタート</button>
-        
-        <!-- 🌟 音量調節バーを完全に削除しました -->
-
         <div id="result-area" style="display: none;">
             <p id="final-score-text" style="font-size: 20px; font-weight: bold; margin-top: 20px; color: #1a237e;"></p>
         </div>
@@ -189,7 +185,16 @@ const wordList = [
     { kanji: "うー！ぱぁん！", kana: "うーぱぁん" },
     { kanji: "同時視聴", kana: "どうじしちょう" },
     { kanji: "うつロンダリング", kana: "うつろんだりんぐ" },
-    { kanji: "お母様", kana: "おかあさま" }
+    { kanji: "お母様", kana: "おかあさま" },
+    
+    // 🌟 新しくいただいた語録を追加しました！
+    { kanji: "チョコボール", kana: "ちょこぼーる" },
+    { kanji: "うつログ", kana: "うつろぐ" },
+    { kanji: "乱数調整", kana: "らんすうちょうせい" },
+    { kanji: "お答えしましょう", kana: "おこたえしましょう" },
+    { kanji: "めちゃめちゃになる", kana: "めちゃめちゃになる" },
+    { kanji: "Dの意思", kana: "でぃーのいし" },
+    { kanji: "愚かすぎる", kana: "おろかすぎる" }
 ];
 
 const romanMap = {
@@ -260,7 +265,6 @@ function startGame() {
     document.getElementById("timer").innerText = timeLeft;
     document.getElementById("utsuro-img").src = "utsuro_normal.png";
     
-    // 🌟 音量を一律「0.2（20%）」の小さめ固定に設定しました
     bgm.volume = 0.2;
     bgm.currentTime = 0; 
     bgm.play().catch(err => {
