@@ -6,11 +6,11 @@
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            /* 🔗 既存の background-color を以下のように書き換えます */
-            background-image: url("bg_image.PNG"); /* ★ここに背景にしたい画像ファイル名を入れる★ */
+            /* 🌟 主が設定してくださった背景画像をここに完璧に組み込みました！ */
+            background-image: url("bg_image.PNG");
             background-size: cover;                /* 画面全体に画像をぴったり引き伸ばす */
             background-position: center;           /* 画像の中心を画面の真ん中に合わせる */
-            background-attachment: fixed;         /* 画面がスクロールしても背景を固定する */
+            background-attachment: fixed;          /* 画面がスクロールしても背景を固定する */
             color: #333;
             display: flex;
             flex-direction: column;
@@ -171,7 +171,6 @@
             ⚠️ 物理キーボード必須（PC専用ゲームです。スマホ・タブレット非対応）
         </div>
 
-        <!-- エラー発生時のみ警告を表示するエリア -->
         <div id="error-message"></div>
 
         <p>挑戦する難易度を選択してください！</p>
@@ -205,7 +204,7 @@
         
         <div class="game-layout">
             <div class="image-area">
-                <img id="utsuro-img" src="utsuro_normal.png" alt="氷室うつろ">
+                <img id="utsuro-img" src="utsuro_normal.PNG" alt="氷室うつろ">
             </div>
             
             <div class="text-area">
@@ -222,7 +221,6 @@
 <audio id="bgm" src="bgm.mp3" loop></audio>
 
 <script>
-// 🌟 主からいただいたGoogleスプレッドシートの公開CSV用アドレスを直接設定しました！
 const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8LcvFteNKwd7-XOLg3aJKG1QOQGxeAvqx3ZeTrs4RMfF7PYzSQwRnhQDnSS_psFW700l36MHWreuB/pub?gid=0&single=true&output=csv";
 
 let wordList = []; 
@@ -234,7 +232,7 @@ const romanMap = {
     'た':['ta'], 'ち':['ti','chi'], 'つ':['tu','tsu'], 'て':['te'], 'と':['to'],
     'な':['na'], 'に':['ni'], 'ぬ':['nu'], 'ね':['ne'], 'の':['no'],
     'は':['ha'], 'ひ':['hi'], 'ふ':['fu','hu'], 'へ':['he'], 'ほ':['ho'],
-    'ま':['ma'], 'み':['mi'], 'む':['mu'], 'め':['me'], 'とも':['mo'],
+    'ま':['ma'], 'み':['mi'], 'む':['mu'], 'め':['me'], 'も':['mo'],
     'や':['ya'], 'ゆ':['yu'], 'よ':['yo'],
     'ら':['ra'], 'り':['ri'], 'る':['ru'], 'れ':['re'], 'ろ':['ro'],
     'わ':['wa'], 'を':['wo'], 'ん':['n'],
@@ -253,8 +251,9 @@ const romanMap = {
     'ぎゃ':['gya'], 'ぎゅ':['gyu'], 'ぎょ':['gyo'],
     'じゃ':['zya','ja'], 'じゅ':['zyu','ju'], 'じょ':['zyo','jo'],
     'びゃ':['bya'], 'びゅ':['byu'], 'びょ':['byo'],
-    'ぴゃ':['pya'], 'ぴゅ':['pyu'], 'ぴょ':['pyo'],
+    'ぴゃ':['pya'], 'ぴゅ':['pyu'], 'ぴょ':['po'],
     'うぉ':['who','uxo'], 
+    'ふぁ':['fa','fua'], 
     'ぁ':['la','xa'], 'ぃ':['li','xi'], 'ぅ':['lu','xu','xtu','ltu'], 'ぇ':['le','xe'], 'ぉ':['lo','xo'],
     'ゃ':['lya','xya'], 'ゅ':['lyu','xyu'], 'ょ':['lyo','xyo'], 'ゎ':['lwa','xwa'],
     'っ':['ltu','xtu','c','s','t'],
@@ -367,7 +366,8 @@ function startGame(diff) {
     isAnimating = false;
     document.getElementById("score").innerText = score;
     document.getElementById("timer").innerText = timeLeft;
-    document.getElementById("utsuro-img").src = "utsuro_normal.png";
+    
+    document.getElementById("utsuro-img").src = "utsuro_normal.PNG";
     
     bgm.volume = 0.2;
     bgm.currentTime = 0; 
@@ -530,10 +530,10 @@ window.addEventListener("keydown", (e) => {
             document.getElementById("score").innerText = score;
             
             isAnimating = true;
-            document.getElementById("utsuro-img").src = "utsuro_clear.png";
+            document.getElementById("utsuro-img").src = "utsuro_clear.PNG";
             
             setTimeout(() => {
-                document.getElementById("utsuro-img").src = "utsuro_normal.png";
+                document.getElementById("utsuro-img").src = "utsuro_normal.PNG";
                 isAnimating = false;
                 nextWord();
             }, 400);
