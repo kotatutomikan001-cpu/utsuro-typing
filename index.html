@@ -30,15 +30,17 @@
             color: #5c6bc0;
             margin-bottom: 20px;
         }
+        /* 🌟 バナーのデザインを優しい青系（涼しげなライトブルー）に変更しました！ */
         .pc-only-banner {
-            background-color: #ffebee;
-            color: #c62828;
-            border: 2px solid #ef9a9a;
-            padding: 10px;
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border: 2px solid #90caf9;
+            padding: 12px;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 15px;
             margin-bottom: 20px;
+            line-height: 1.5;
         }
         .game-layout {
             display: flex;
@@ -166,9 +168,10 @@
     <h1>氷室うつろ タイピングゲーム</h1>
     
     <div id="start-screen">
+        <!-- 🌟 バナーの文言に「<br>」を入れ、完璧に改行を適用しました！ -->
         <div class="pc-only-banner">
-    ⚠️ 物理キーボード必須（スマートフォンやタブレットでも、Bluetooth接続などの外部キーボードが使用できればプレイ可能です）
-</div>
+            ⚠️ 物理キーボード必須<br>（スマートフォンやタブレットでも、Bluetooth接続などの外部キーボードが使用できればプレイ可能です）
+        </div>
 
         <div id="error-message"></div>
 
@@ -254,7 +257,6 @@ const romanMap = {
     'うぉ':['who','uxo'], 
     'ふぁ':['fa','fua'], 
     'ぁ':['la','xa'], 'ぃ':['li','xi'], 'ぅ':['lu','xu','xtu','ltu'], 'ぇ':['le','xe'], 
-    /* 🌟 ココを完璧に修正！余計なスペースを消して 'lo' と 'xo' が正しく動くようにしました */
     'ぉ':['lo','xo'],
     'ゃ':['lya','xya'], 'ゅ':['lyu','xyu'], 'ょ':['lyo','xyo'], 'ゎ':['lwa','xwa'],
     'っ':['ltu','xtu','c','s','t'],
