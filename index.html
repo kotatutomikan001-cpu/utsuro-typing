@@ -3,6 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <title>氷室うつろのタイピングゲーム</title>
+
+    <script>
+        const GA_TRACKING_ID = "G-MQD0CVKK5X"; // ★ここを主のIDに書き換えてね★
+
+        // Googleアナリティクスのシステムを自動で読み込む魔法のコードです
+        if (GA_TRACKING_ID !== "G-XXXXXXXXXX") {
+            const gaScript = document.createElement('script');
+            gaScript.async = true;
+            gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`;
+            document.head.appendChild(gaScript);
+
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', GA_TRACKING_ID);
+        }
+    </script>
+
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -225,7 +243,6 @@ const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8
 
 let wordList = []; 
 
-/* 🌟 分解して打つ時も100%バグらないよう、すべての組み合わせを明示的に登録しました！ */
 const romanMap = {
     'あ':['a'], 'い':['i','yi'], 'う':['u','wu'], 'え':['e','ye'], 'お':['o'],
     'か':['ka'], 'き':['ki'], 'く':['ku'], 'け':['ke'], 'こ':['ko'],
@@ -255,10 +272,7 @@ const romanMap = {
     'ぴゃ':['pya'], 'ぴゅ':['pyu'], 'ぴょ':['po'],
     'うぉ':['who','uxo'], 
     'ふぁ':['fa','fua'], 
-    
-    /* 🌟 しゅぉのすべての入力ルートを網羅！これで完全自由化です */
     'しゅぉ':['syuwho','syuulo','syuuxo','shuwho','shuulo','shuuxo'],
-    
     'ぁ':['la','xa'], 'ぃ':['li','xi'], 'ぅ':['lu','xu','xtu','ltu'], 'ぇ':['le','xe'], 
     'ぉ':['lo','xo'],
     'ゃ':['lya','xya'], 'ゅ':['lyu','xyu'], 'ょ':['lyo','xyo'], 'ゎ':['lwa','xwa'],
@@ -506,14 +520,11 @@ function updateDisplay() {
     document.getElementById("typing-display").innerHTML = html;
 }
 
-/* 🌟 主のタイピング中の挙動に合わせて、ガイド表示（グレーの部分）がリアルタイムに切り替わるように大改造！ */
 window.addEventListener("keydown", (e) => {
     if (!isPlaying || isAnimating) return;
     if (e.key.length !== 1) return;
     
     const pressed = e.key.toLowerCase();
-    
-    // 現在打ち込めるパターンのうち、主が今押したキーから始まる選択肢を絞り込む
     let matchedOptions = currentRomaOptions.filter(opt => opt.startsWith(pressed));
     
     if (matchedOptions.length > 0) {
@@ -527,11 +538,9 @@ window.addEventListener("keydown", (e) => {
             return;
         }
 
-        // 次に入力すべき残りの文字を更新
         currentRomaOptions = matchedOptions.map(opt => opt.substring(1)).filter(opt => opt.length > 0);
             
         if (currentRomaOptions.length === 0) {
-            // 完全に1つの塊を打ち切った場合、仮名文字をスキップ
             if (remainingKana.length >= 3 && romanMap[remainingKana.substring(0, 3)]) {
                 remainingKana = remainingKana.substring(3);
             } else if (remainingKana.length >= 2 && romanMap[remainingKana.substring(0, 2)]) {
@@ -542,8 +551,6 @@ window.addEventListener("keydown", (e) => {
             displayRoma = typedRoma + makeDefaultRoma(remainingKana);
             parseNextRoma();
         } else {
-            // まだ塊の途中（例：「syuwho」の「y」を打った直後など）
-            // 主が選んだルートに合わせてグレーの予測ガイド表示をリアルタイムに書き換える！
             let longestNextPredict = currentRomaOptions[0]; 
             let skipCount = 1;
             if (remainingKana.length >= 3 && romanMap[remainingKana.substring(0, 3)]) skipCount = 3;
