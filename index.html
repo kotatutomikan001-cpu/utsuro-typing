@@ -150,8 +150,8 @@
             display: inline-block;
             margin-bottom: 10px;
         }
-        #loading-message {
-            color: #5c6bc0;
+        #error-message {
+            color: #d32f2f;
             font-weight: bold;
             margin-bottom: 15px;
         }
@@ -167,7 +167,8 @@
             ⚠️ 物理キーボード必須（PC専用ゲームです。スマホ・タブレット非対応）
         </div>
 
-        <div id="loading-message">お題データを読み込んでいます...</div>
+        <!-- エラー発生時のみ警告を表示するエリア -->
+        <div id="error-message"></div>
 
         <p>挑戦する難易度を選択してください！</p>
         
@@ -217,10 +218,10 @@
 <audio id="bgm" src="bgm.mp3" loop></audio>
 
 <script>
-// 🌟 ↓ここにGoogleスプレッドシートで「Webに公開（CSV）」したURLを貼り付けてください！
+// 🌟 主からいただいたGoogleスプレッドシートの公開CSV用アドレスを直接設定しました！
 const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8LcvFteNKwd7-XOLg3aJKG1QOQGxeAvqx3ZeTrs4RMfF7PYzSQwRnhQDnSS_psFW700l36MHWreuB/pub?gid=0&single=true&output=csv";
 
-let wordList = []; // スプレッドシートから自動取得するため最初は空っぽにします
+let wordList = []; 
 
 const romanMap = {
     'あ':['a'], 'い':['i','yi'], 'う':['u','wu'], 'え':['e','ye'], 'お':['o'],
@@ -229,7 +230,7 @@ const romanMap = {
     'た':['ta'], 'ち':['ti','chi'], 'つ':['tu','tsu'], 'て':['te'], 'と':['to'],
     'な':['na'], 'に':['ni'], 'ぬ':['nu'], 'ね':['ne'], 'の':['no'],
     'は':['ha'], 'ひ':['hi'], 'ふ':['fu','hu'], 'へ':['he'], 'ほ':['ho'],
-    'ま':['ma'], 'み':['mi'], 'む':['mu'], 'め':['me'], 'も':['mo'],
+    'ま':['ma'], 'み':['mi'], 'む':['mu'], 'め':['me'], 'とも':['mo'],
     'や':['ya'], 'ゆ':['yu'], 'よ':['yo'],
     'ら':['ra'], 'り':['ri'], 'る':['ru'], 'れ':['re'], 'ろ':['ro'],
     'わ':['wa'], 'を':['wo'], 'ん':['n'],
@@ -273,7 +274,6 @@ let highScores = { easy: 0, normal: 0, hard: 0 };
 
 const bgm = document.getElementById("bgm");
 
-// 🌟 スプレッドシートからCSVデータを引っ張ってくる関数
 async function loadWordListFromSpreadsheet() {
     try {
         const response = await fetch(SPREADSHEET_CSV_URL);
@@ -283,11 +283,9 @@ async function loadWordListFromSpreadsheet() {
         const rows = data.split(/\r?\n/);
         
         const loadedWords = [];
-        // 0行目は見出し(kanji, kana)なので1行目から読み込む
         for (let i = 1; i < rows.length; i++) {
             if (!rows[i].trim()) continue;
             
-            // カンマで分割（簡易CSVパース）
             const cols = rows[i].split(",");
             if (cols.length >= 2) {
                 const kanjiVal = cols[0].replace(/^"|"$/g, '').trim();
@@ -300,21 +298,20 @@ async function loadWordListFromSpreadsheet() {
         }
         
         if (loadedWords.length === 0) {
-            document.getElementById("loading-message").innerText = "⚠️ スプレッドシートにお題データが見つかりません";
+            document.getElementById("error-message").innerText = "⚠️ スプレッドシートにお題データが見つかりません";
             return;
         }
         
         wordList = loadedWords;
-        document.getElementById("loading-message").innerText = `✅ お題データを ${wordList.length} 件読み込みました！`;
+        document.getElementById("error-message").innerText = ""; 
         
-        // 読み込みが完了したらボタンを有効化
         document.getElementById("btn-easy").disabled = false;
         document.getElementById("btn-normal").disabled = false;
         document.getElementById("btn-hard").disabled = false;
         
     } catch (error) {
         console.error(error);
-        document.getElementById("loading-message").innerText = "⚠️ お題データの読み込みに失敗しました。URLの設定を確認してください。";
+        document.getElementById("error-message").innerText = "⚠️ お題データの読み込みに失敗しました。URLの設定を確認してください。";
     }
 }
 
@@ -328,7 +325,6 @@ function loadAllHighScores() {
     document.getElementById("highscore-hard").innerText = `👑 最高: ${highScores.hard} 点`;
 }
 
-// 起動時にハイスコアのロードとスプレッドシートのロードを行う
 loadAllHighScores();
 loadWordListFromSpreadsheet();
 
