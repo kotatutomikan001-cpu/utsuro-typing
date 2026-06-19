@@ -110,6 +110,10 @@
         button:hover {
             opacity: 0.9;
         }
+        button:disabled {
+            background-color: #cccccc !important;
+            cursor: not-allowed;
+        }
         
         .difficulty-container {
             margin: 20px 0;
@@ -120,10 +124,8 @@
         .btn-easy { background-color: #4caf50; }
         .btn-normal { background-color: #2196f3; }
         .btn-hard { background-color: #ff5722; }
-        
-        /* 🌟 X共有ボタン用のスタイリング */
         .btn-share {
-            background-color: #000000; /* Xのブランドカラー */
+            background-color: #000000;
             margin-top: 15px;
             padding: 10px 25px;
             font-size: 16px;
@@ -148,6 +150,11 @@
             display: inline-block;
             margin-bottom: 10px;
         }
+        #loading-message {
+            color: #5c6bc0;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -160,19 +167,21 @@
             ⚠️ 物理キーボード必須（PC専用ゲームです。スマホ・タブレット非対応）
         </div>
 
+        <div id="loading-message">お題データを読み込んでいます...</div>
+
         <p>挑戦する難易度を選択してください！</p>
         
         <div class="difficulty-container">
             <div>
-                <button class="btn-easy" onclick="startGame('easy')">かんたん (90秒)</button>
+                <button id="btn-easy" class="btn-easy" onclick="startGame('easy')" disabled>かんたん (90秒)</button>
                 <div id="highscore-easy" class="highscore-display">👑 最高: 0 点</div>
             </div>
             <div>
-                <button class="btn-normal" onclick="startGame('normal')">ふつう (60秒)</button>
+                <button id="btn-normal" class="btn-normal" onclick="startGame('normal')" disabled>ふつう (60秒)</button>
                 <div id="highscore-normal" class="highscore-display">👑 最高: 0 点</div>
             </div>
             <div>
-                <button class="btn-hard" onclick="startGame('hard')">むずかしい (30秒)</button>
+                <button id="btn-hard" class="btn-hard" onclick="startGame('hard')" disabled>むずかしい (30秒)</button>
                 <div id="highscore-hard" class="highscore-display">👑 最高: 0 点</div>
             </div>
         </div>
@@ -182,7 +191,6 @@
         <div id="result-area" style="display: none;">
             <p id="final-score-text" style="font-size: 20px; font-weight: bold; margin-top: 20px; color: #1a237e;"></p>
             <p id="new-record-text" style="font-size: 18px; font-weight: bold; color: #e53935; display: none; margin-top: 5px;">🎉 この難易度での最高記録更新！！</p>
-            
             <button class="btn-share" onclick="shareOnX()">𝕏 結果をポストする</button>
         </div>
     </div>
@@ -209,99 +217,10 @@
 <audio id="bgm" src="bgm.mp3" loop></audio>
 
 <script>
-const wordList = [
-    { kanji: "ごきげんよう", kana: "ごきげんよう" },
-    { kanji: "ごしゅ", kana: "ごしゅ" },
-    { kanji: "ご主人様", kana: "ごしゅじんさま" },
-    { kanji: "キッズ", kana: "きっず" },
-    { kanji: "皆様", kana: "みなさま" },
-    { kanji: "シュウォッチ", kana: "しゅうぉっち" },
-    { kanji: "しゅがしゅが", kana: "しゅがしゅが" },
-    { kanji: "しゅがキャン", kana: "しゅがきゃん" },
-    { kanji: "涅槃", kana: "ねはん" },
-    { kanji: "氷室うつろ", kana: "ひむろうつろ" },
-    { kanji: "うつろジオ", kana: "うつろじお" },
-    { kanji: "見ておけうつろ", kana: "みておけうつろ" },
-    { kanji: "星めぐり学園", kana: "ほしめぐりがくえん" },
-    { kanji: "ワビスケ", kana: "わびすけ" },
-    { kanji: "うつ郎", kana: "うつろう" },
-    { kanji: "さがってよいぞ", kana: "さがってよいぞ" },
-    { kanji: "お待たせしました、最推しです", kana: "おまたせしましたさいおしです" },
-    { kanji: "ラルフさん", kana: "らるふさん" },
-    { kanji: "サクライさん", kana: "さくらいさん" },
-    { kanji: "ミニうつろ", kana: "みにうつろ" },
-    { kanji: "ドーナツさん", kana: "どーなつさん" },
-    { kanji: "朝活", kana: "あさかつ" },
-    { kanji: "任せてくださいよ！", kana: "まかせてくださいよ" },
-    { kanji: "まかセロリ！", kana: "まかせろり" },
-    { kanji: "ちゅう", kana: "ちゅう" },
-    { kanji: "ごちゅちゅ", kana: "ごちゅちゅ" },
-    { kanji: "生ハム原木", kana: "なまはむげんぼく" },
-    { kanji: "無人島", kana: "むじんとう" },
-    { kanji: "ちっちゃこい", kana: "ちっちゃこい" },
-    { kanji: "ぼだっこ", kana: "ぼだっこ" },
-    { kanji: "オランダせんべい", kana: "おらんだせんべい" },
-    { kanji: "カスのおねえちゃん", kana: "かすのおねえちゃん" },
-    { kanji: "ベースブレッド", kana: "べーすぶれっど" },
-    { kanji: "メイド", kana: "めいど" },
-    { kanji: "うちゅちゅ", kana: "うちゅちゅ" },
-    { kanji: "悪代官", kana: "あくだいかん" },
-    { kanji: "腹黒主水之助助兵衛", kana: "はらぐろもんどのすけすけべえ" },
-    { kanji: "ばんえい競馬", kana: "ばんえいけいば" },
-    { kanji: "よろしくお願いします", kana: "よろしくおねがいします" },
-    { kanji: "パクチー", kana: "ぱくちー" },
-    { kanji: "うつろスキー", kana: "うつろすきー" },
-    { kanji: "人生縛り", kana: "じんせいしばり" },
-    { kanji: "ジューンブライド", kana: "じゅーんぶらいど" },
-    { kanji: "ボーントゥスティール", kana: "ぼーんとぅすてぃーる" },
-    { kanji: "超神髄", kana: "ちょうしんずい" },
-    { kanji: "ボッシュ", kana: "ぼっしゅ" },
-    { kanji: "うー！ぱぁん！", kana: "うーぱぁん" },
-    { kanji: "同時視聴", kana: "どうじしちょう" },
-    { kanji: "うつロンダリング", kana: "うつろんだりんぐ" },
-    { kanji: "お母様", kana: "おかあさま" },
-    { kanji: "チョコボール", kana: "ちょこぼーる" },
-    { kanji: "うつログ", kana: "うつろぐ" },
-    { kanji: "乱数調整", kana: "らんすうちょうせい" },
-    { kanji: "お答えしましょう", kana: "おこたえしましょう" },
-    { kanji: "めちゃめちゃになる", kana: "めちゃめちゃになる" },
-    { kanji: "Dの意思", kana: "でぃーのいし" },
-    { kanji: "愚かすぎる", kana: "おろかすぎる" },
-    { kanji: "新衣装", kana: "しんいしょう" },
-    { kanji: "３Ｄお披露目", kana: "すりーでぃーおひろめ" },
-    { kanji: "ホワイトブリム", kana: "ほわいとぶりむ" },
-    { kanji: "うつごしゅ", kana: "うつごしゅ" },
-    { kanji: "なるほどんぐり", kana: "なるほどんぐり" },
-    { kanji: "ワザップ", kana: "わざっぷ" },
-    { kanji: "上飲み", kana: "うえのみ" },
-    { kanji: "ゴの意識", kana: "ごのいしき" },
-    { kanji: "弱いねぇ", kana: "よわいねぇ" },
-    { kanji: "勝ち風呂", kana: "かちぶろ" },
-    { kanji: "置きファイくん", kana: "おきふぁいくん" },
-    { kanji: "ぞぬ", kana: "ぞぬ" },
-    { kanji: "野犬", kana: "やけん" },
-    { kanji: "歌枠", kana: "うたわく" },
-    { kanji: "ボイトレ", kana: "ぼいとれ" },
-    { kanji: "あなたの最推し", kana: "あなたのさいおし" },
-    { kanji: "秘室うつろ", kana: "ひむろうつろ" },
-    { kanji: "1on1", kana: "わんおんわん" },
-    { kanji: "デジタルフラワースタンド", kana: "でじたるふらわーすたんど" },
-    { kanji: "ぬっさん", kana: "ぬっさん" },
-    { kanji: "ニセうつろ", kana: "にせうつろ" },
-    { kanji: "クラッシュ", kana: "くらっしゅ" },
-    { kanji: "あいてるよ", kana: "あいてるよ" },
-    { kanji: "メイド長", kana: "めいどちょう" },
-    { kanji: "カスート", kana: "かすーと" },
-    { kanji: "アリスブルー", kana: "ありすぶるー" },
-    { kanji: "スノーホワイト", kana: "すのーほわいと" },
-    { kanji: "エビフライ", kana: "えびふらい" },
-    { kanji: "赤西瑛梨華", kana: "あかにしえりか" },
-    { kanji: "おきらくシュガー", kana: "おきらくしゅがー" },
-    { kanji: "キッチュでクール", kana: "きっちゅでくーる" },
-    { kanji: "Ｚカップ", kana: "ぜっとかっぷ" },
-    { kanji: "ウォータースライダー", kana: "うぉーたーすらいだー" },
-    { kanji: "すんちゃずんちゃ", kana: "ずんちゃずんちゃ" }
-];
+// 🌟 ↓ここにGoogleスプレッドシートで「Webに公開（CSV）」したURLを貼り付けてください！
+const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8LcvFteNKwd7-XOLg3aJKG1QOQGxeAvqx3ZeTrs4RMfF7PYzSQwRnhQDnSS_psFW700l36MHWreuB/pub?gid=0&single=true&output=csv";
+
+let wordList = []; // スプレッドシートから自動取得するため最初は空っぽにします
 
 const romanMap = {
     'あ':['a'], 'い':['i','yi'], 'う':['u','wu'], 'え':['e','ye'], 'お':['o'],
@@ -354,6 +273,51 @@ let highScores = { easy: 0, normal: 0, hard: 0 };
 
 const bgm = document.getElementById("bgm");
 
+// 🌟 スプレッドシートからCSVデータを引っ張ってくる関数
+async function loadWordListFromSpreadsheet() {
+    try {
+        const response = await fetch(SPREADSHEET_CSV_URL);
+        if (!response.ok) throw new Error("データの取得に失敗しました");
+        
+        const data = await response.text();
+        const rows = data.split(/\r?\n/);
+        
+        const loadedWords = [];
+        // 0行目は見出し(kanji, kana)なので1行目から読み込む
+        for (let i = 1; i < rows.length; i++) {
+            if (!rows[i].trim()) continue;
+            
+            // カンマで分割（簡易CSVパース）
+            const cols = rows[i].split(",");
+            if (cols.length >= 2) {
+                const kanjiVal = cols[0].replace(/^"|"$/g, '').trim();
+                const kanaVal = cols[1].replace(/^"|"$/g, '').trim();
+                
+                if (kanjiVal && kanaVal) {
+                    loadedWords.push({ kanji: kanjiVal, kana: kanaVal });
+                }
+            }
+        }
+        
+        if (loadedWords.length === 0) {
+            document.getElementById("loading-message").innerText = "⚠️ スプレッドシートにお題データが見つかりません";
+            return;
+        }
+        
+        wordList = loadedWords;
+        document.getElementById("loading-message").innerText = `✅ お題データを ${wordList.length} 件読み込みました！`;
+        
+        // 読み込みが完了したらボタンを有効化
+        document.getElementById("btn-easy").disabled = false;
+        document.getElementById("btn-normal").disabled = false;
+        document.getElementById("btn-hard").disabled = false;
+        
+    } catch (error) {
+        console.error(error);
+        document.getElementById("loading-message").innerText = "⚠️ お題データの読み込みに失敗しました。URLの設定を確認してください。";
+    }
+}
+
 function loadAllHighScores() {
     highScores.easy = parseInt(localStorage.getItem("utsuro_typing_hs_easy") || 0, 10);
     highScores.normal = parseInt(localStorage.getItem("utsuro_typing_hs_normal") || 0, 10);
@@ -364,7 +328,9 @@ function loadAllHighScores() {
     document.getElementById("highscore-hard").innerText = `👑 最高: ${highScores.hard} 点`;
 }
 
+// 起動時にハイスコアのロードとスプレッドシートのロードを行う
 loadAllHighScores();
+loadWordListFromSpreadsheet();
 
 function shufflePool() {
     questionPool = [...wordList];
@@ -606,20 +572,16 @@ function endGame() {
     alert(`タイムアップ！あなたのスコアは ${score} でした！`);
 }
 
-/* 🌟 X（Twitter）共有ポップアップ機能 */
 function shareOnX() {
     let diffName = "ふつう";
     if (currentDifficulty === 'easy') diffName = "かんたん";
     if (currentDifficulty === 'hard') diffName = "むずかしい";
     
-    // 現在アクセスされているゲームのURLを自動取得
     const gameUrl = window.location.href;
     
-    // 投稿されるテキストの構築
     const text = `氷室うつろタイピングゲーム（${diffName}モード）で、スコア【 ${score} 点 】を達成しました！\nみんなも推しの語録をタイピングしよう！\n`;
     const hashtags = "氷室うつろ,タイピングゲーム";
     
-    // XのシェアURLを生成してポップアップで開く
     const shareUrl = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}&hashtags=${encodeURIComponent(hashtags)}`;
     
     window.open(shareUrl, '_blank', 'width=600,height=400');
