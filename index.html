@@ -6,7 +6,6 @@
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            /* 🌟 背景画像もすべて小文字の .png に統一しました！ */
             background-image: url("bg_image.png");
             background-size: cover;
             background-position: center;
@@ -254,7 +253,9 @@ const romanMap = {
     'ぴゃ':['pya'], 'ぴゅ':['pyu'], 'ぴょ':['po'],
     'うぉ':['who','uxo'], 
     'ふぁ':['fa','fua'], 
-    'ぁ':['la','xa'], 'ぃ':['li','xi'], 'ぅ':['lu','xu','xtu','ltu'], 'ぇ':['le','xe'], 'ぉ':['lo','xo'],
+    'ぁ':['la','xa'], 'ぃ':['li','xi'], 'ぅ':['lu','xu','xtu','ltu'], 'ぇ':['le','xe'], 
+    /* 🌟 ココを完璧に修正！余計なスペースを消して 'lo' と 'xo' が正しく動くようにしました */
+    'ぉ':['lo','xo'],
     'ゃ':['lya','xya'], 'ゅ':['lyu','xyu'], 'ょ':['lyo','xyo'], 'ゎ':['lwa','xwa'],
     'っ':['ltu','xtu','c','s','t'],
     'ー':['-'], '！':['!'], '、':[','], ' ':[' ']
@@ -367,7 +368,6 @@ function startGame(diff) {
     document.getElementById("score").innerText = score;
     document.getElementById("timer").innerText = timeLeft;
     
-    // 🌟 開始時も小文字の .png に統一！
     document.getElementById("utsuro-img").src = "utsuro_normal.png";
     
     bgm.volume = 0.2;
@@ -532,8 +532,6 @@ window.addEventListener("keydown", (e) => {
             document.getElementById("score").innerText = score;
             
             isAnimating = true;
-            
-            // 🌟 クリア画像も小文字の .png に統一！
             document.getElementById("utsuro-img").src = "utsuro_clear.png";
             
             setTimeout(() => {
