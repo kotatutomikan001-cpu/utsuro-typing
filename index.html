@@ -30,7 +30,6 @@
             color: #5c6bc0;
             margin-bottom: 20px;
         }
-        /* 🌟 バナーのデザインを優しい青系（涼しげなライトブルー）に変更しました！ */
         .pc-only-banner {
             background-color: #e3f2fd;
             color: #1565c0;
@@ -168,7 +167,6 @@
     <h1>氷室うつろ タイピングゲーム</h1>
     
     <div id="start-screen">
-        <!-- 🌟 バナーの文言に「<br>」を入れ、完璧に改行を適用しました！ -->
         <div class="pc-only-banner">
             ⚠️ 物理キーボード必須<br>（スマートフォンやタブレットでも、Bluetooth接続などの外部キーボードが使用できればプレイ可能です）
         </div>
@@ -256,6 +254,10 @@ const romanMap = {
     'ぴゃ':['pya'], 'ぴゅ':['pyu'], 'ぴょ':['po'],
     'うぉ':['who','uxo'], 
     'ふぁ':['fa','fua'], 
+    
+    /* 🌟 「しゅぉ」を syuwho で一発入力できる無敵のルールを追加しました！ */
+    'しゅぉ':['syuwho'],
+    
     'ぁ':['la','xa'], 'ぃ':['li','xi'], 'ぅ':['lu','xu','xtu','ltu'], 'ぇ':['le','xe'], 
     'ぉ':['lo','xo'],
     'ゃ':['lya','xya'], 'ゅ':['lyu','xyu'], 'ょ':['lyo','xyo'], 'ゎ':['lwa','xwa'],
@@ -453,6 +455,16 @@ function parseNextRoma() {
         currentRomaOptions = [...romanMap['っ'], ...nextRomaList.map(r => r.charAt(0))];
         return;
     }
+    
+    /* 🌟 3文字の塊「しゅぉ」を最優先で判定するロジックをここに仕込みました！ */
+    if (remainingKana.length >= 3) {
+        const tripleChar = remainingKana.substring(0, 3);
+        if (romanMap[tripleChar]) {
+            currentRomaOptions = romanMap[tripleChar];
+            return;
+        }
+    }
+    
     if (remainingKana.length >= 2) {
         const doubleChar = remainingKana.substring(0, 2);
         if (romanMap[doubleChar]) {
@@ -475,7 +487,11 @@ function makeDefaultRoma(kana) {
             i++;
             continue;
         }
-        if (i + 1 < kana.length && romanMap[kana.substring(i, i+2)]) {
+        /* 🌟 デフォルト表示を作る時も「3文字の塊」をしっかり最優先します */
+        if (i + 2 < kana.length && romanMap[kana.substring(i, i+3)]) {
+            res += romanMap[kana.substring(i, i+3)][0];
+            i += 3;
+        } else if (i + 1 < kana.length && romanMap[kana.substring(i, i+2)]) {
             res += romanMap[kana.substring(i, i+2)][0];
             i += 2;
         } else {
@@ -515,7 +531,10 @@ window.addEventListener("keydown", (e) => {
             .filter(opt => opt.length > 0);
             
         if (currentRomaOptions.length === 0) {
-            if (remainingKana.length >= 2 && romanMap[remainingKana.substring(0, 2)]) {
+            /* 🌟 正解時の文字数スキップも3文字に対応させました！ */
+            if (remainingKana.length >= 3 && romanMap[remainingKana.substring(0, 3)]) {
+                remainingKana = remainingKana.substring(3);
+            } else if (remainingKana.length >= 2 && romanMap[remainingKana.substring(0, 2)]) {
                 remainingKana = remainingKana.substring(2);
             } else {
                 remainingKana = remainingKana.substring(1);
@@ -524,7 +543,11 @@ window.addEventListener("keydown", (e) => {
             parseNextRoma();
         } else {
             let nextPredict = matchedOption.substring(1);
-            displayRoma = typedRoma + nextPredict + makeDefaultRoma(remainingKana.substring(remainingKana.length >= 2 && romanMap[remainingKana.substring(0, 2)] ? 2 : 1));
+            let skipCount = 1;
+            if (remainingKana.length >= 3 && romanMap[remainingKana.substring(0, 3)]) skipCount = 3;
+            else if (remainingKana.length >= 2 && romanMap[remainingKana.substring(0, 2)]) skipCount = 2;
+            
+            displayRoma = typedRoma + nextPredict + makeDefaultRoma(remainingKana.substring(skipCount));
         }
         
         updateDisplay();
