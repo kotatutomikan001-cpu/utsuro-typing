@@ -45,6 +45,7 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
+            position: relative;
         }
         #game-container {
             background-color: white;
@@ -53,6 +54,7 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
             text-align: center;
             width: 750px;
+            position: relative;
         }
         h1 {
             color: #5c6bc0;
@@ -214,6 +216,17 @@
             font-weight: bold;
             margin-bottom: 15px;
         }
+
+        /* 画面右下のBGMクレジット表記 */
+        .bgm-credit {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 11px;
+            color: #888888;
+            opacity: 0.8;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -249,6 +262,9 @@
             <p id="new-record-text" style="font-size: 18px; font-weight: bold; color: #e53935; display: none; margin-top: 5px;">🎉 最速記録更新！！</p>
             <button class="btn-share" onclick="shareOnX()">𝕏 結果をポストする</button>
         </div>
+
+        <!-- BGMクレジット表示 -->
+        <div class="bgm-credit">フリーBGM DOVA-SYNDROME Morning 使用</div>
     </div>
 
     <div id="game-screen" style="display: none;">
@@ -262,7 +278,7 @@
             <div class="text-area">
                 <!-- 出題表示（kanaから出題・CSSにより幻魔文字化） -->
                 <div id="kanji-display"></div>
-                <!-- 補足用（薄めの漢字表示エリア：アシストなしの時は非表示） -->
+                <!-- 補足用（薄めの漢字表示エリア：アシストなしの時は通常非表示、正解時一瞬表示） -->
                 <div id="kana-display"></div>
             </div>
         </div>
@@ -435,16 +451,13 @@ function startGame(mode) {
     prepareQuestions();
     
     const badge = document.getElementById("difficulty-badge");
-    const kanaDisplay = document.getElementById("kana-display");
 
     if (mode === 'assist') {
         badge.innerText = "アシストありモード";
         badge.style.backgroundColor = "#4caf50";
-        kanaDisplay.style.display = "block";
     } else {
         badge.innerText = "アシストなしモード";
         badge.style.backgroundColor = "#ff5722";
-        kanaDisplay.style.display = "none";
     }
 
     document.getElementById("start-screen").style.display = "none";
@@ -599,15 +612,19 @@ function makeDefaultRoma(kana) {
 }
 
 function updateDisplay() {
+    const kanaDisplay = document.getElementById("kana-display");
     let html = "";
-    // アシストあり、もしくは正解時の演出中（isAnimating）はローマ字を表示
+
+    // アシストあり、もしくは正解時の演出中（isAnimating）は表示を解放する
     if (currentMode === 'assist' || isAnimating) {
         html = `<span class="typed">${typedRoma}</span><span class="untyped">${displayRoma.substring(typedRoma.length)}</span>`;
+        kanaDisplay.style.display = "block";
     } else {
-        // アシストなしモードの通常プレイ時：伏字（●）で表示
+        // アシストなしモードの通常プレイ時：伏字（●）表示、補足漢字表記は隠す
         const typedMask = "●".repeat(typedRoma.length);
         const untypedMask = "●".repeat(displayRoma.length - typedRoma.length);
         html = `<span class="typed">${typedMask}</span><span class="untyped">${untypedMask}</span>`;
+        kanaDisplay.style.display = "none";
     }
     document.getElementById("typing-display").innerHTML = html;
 }
@@ -657,7 +674,7 @@ window.addEventListener("keydown", (e) => {
             isAnimating = true;
             document.getElementById("utsuro-img").src = "utsuro_clear.png";
             
-            // 正解判定時に画面表示を更新して一瞬だけアルファベットを表示する
+            // 正解判定時に画面表示を更新して一瞬だけアルファベットと補足漢字を表示する
             updateDisplay();
             
             /* 正解表示をチラ見せ（0.25秒）した後に画面更新・次の問題へ */
