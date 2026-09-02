@@ -161,6 +161,7 @@
             margin: 20px 0;
             display: flex;
             justify-content: center;
+            align-items: flex-end;
             gap: 20px;
         }
         .btn-assist { background-color: #4caf50; }
@@ -192,6 +193,13 @@
             margin-top: 5px;
         }
         
+        .warning-label {
+            color: #d32f2f;
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
         #difficulty-badge {
             font-size: 14px;
             font-weight: bold;
@@ -228,6 +236,7 @@
                 <div id="highscore-assist" class="highscore-display">👑 最速: -- 秒</div>
             </div>
             <div>
+                <div class="warning-label">※要注意 幻魔文字玄人向け</div>
                 <button id="btn-no-assist" class="btn-no-assist" onclick="startGame('no-assist')" disabled>アシストなし<br><span style="font-size: 13px;">(解読力テスト)</span></button>
                 <div id="highscore-no-assist" class="highscore-display">👑 最速: -- 秒</div>
             </div>
@@ -591,11 +600,11 @@ function makeDefaultRoma(kana) {
 
 function updateDisplay() {
     let html = "";
-    if (currentMode === 'assist') {
-        // アシストありモード：通常通りアルファベットを表示
+    // アシストあり、もしくは正解時の演出中（isAnimating）はローマ字を表示
+    if (currentMode === 'assist' || isAnimating) {
         html = `<span class="typed">${typedRoma}</span><span class="untyped">${displayRoma.substring(typedRoma.length)}</span>`;
     } else {
-        // アシストなしモード：入力済みは●（灰）、未入力は●（赤）に伏字化
+        // アシストなしモードの通常プレイ時：伏字（●）で表示
         const typedMask = "●".repeat(typedRoma.length);
         const untypedMask = "●".repeat(displayRoma.length - typedRoma.length);
         html = `<span class="typed">${typedMask}</span><span class="untyped">${untypedMask}</span>`;
@@ -648,12 +657,15 @@ window.addEventListener("keydown", (e) => {
             isAnimating = true;
             document.getElementById("utsuro-img").src = "utsuro_clear.png";
             
-            /* 正解時のPNG表示時間：600ミリ秒（0.6秒） */
+            // 正解判定時に画面表示を更新して一瞬だけアルファベットを表示する
+            updateDisplay();
+            
+            /* 正解表示をチラ見せ（0.25秒）した後に画面更新・次の問題へ */
             setTimeout(() => {
                 document.getElementById("utsuro-img").src = "utsuro_normal.png";
                 isAnimating = false;
                 nextWord();
-            }, 600);
+            }, 250);
         }
     }
 });
