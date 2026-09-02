@@ -258,7 +258,7 @@
             </div>
         </div>
         
-        <!-- ローマ字入力表示エリア（アシストなしの時は非表示） -->
+        <!-- ローマ字/伏字入力表示エリア -->
         <div id="typing-display"></div>
         <div id="score-display">進捗: <span id="progress">0</span> / 10 | 経過時間: <span id="timer">0.00</span>秒</div>
         
@@ -381,7 +381,6 @@ async function loadWordListFromSpreadsheet() {
         wordList = fallbackWordList;
         document.getElementById("error-message").innerText = "⚠️ スプレッドシート読み込みに失敗したため予備お題で動作します";
     } finally {
-        // 成功・失敗にかかわらずボタンを有効化してスタートできるようにする
         document.getElementById("btn-assist").disabled = false;
         document.getElementById("btn-no-assist").disabled = false;
     }
@@ -427,18 +426,15 @@ function startGame(mode) {
     prepareQuestions();
     
     const badge = document.getElementById("difficulty-badge");
-    const typingDisplay = document.getElementById("typing-display");
     const kanaDisplay = document.getElementById("kana-display");
 
     if (mode === 'assist') {
         badge.innerText = "アシストありモード";
         badge.style.backgroundColor = "#4caf50";
-        typingDisplay.style.display = "block";
         kanaDisplay.style.display = "block";
     } else {
         badge.innerText = "アシストなしモード";
         badge.style.backgroundColor = "#ff5722";
-        typingDisplay.style.display = "none";
         kanaDisplay.style.display = "none";
     }
 
@@ -594,7 +590,16 @@ function makeDefaultRoma(kana) {
 }
 
 function updateDisplay() {
-    let html = `<span class="typed">${typedRoma}</span><span class="untyped">${displayRoma.substring(typedRoma.length)}</span>`;
+    let html = "";
+    if (currentMode === 'assist') {
+        // アシストありモード：通常通りアルファベットを表示
+        html = `<span class="typed">${typedRoma}</span><span class="untyped">${displayRoma.substring(typedRoma.length)}</span>`;
+    } else {
+        // アシストなしモード：入力済みは●（灰）、未入力は●（赤）に伏字化
+        const typedMask = "●".repeat(typedRoma.length);
+        const untypedMask = "●".repeat(displayRoma.length - typedRoma.length);
+        html = `<span class="typed">${typedMask}</span><span class="untyped">${untypedMask}</span>`;
+    }
     document.getElementById("typing-display").innerHTML = html;
 }
 
