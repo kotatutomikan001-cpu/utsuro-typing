@@ -22,11 +22,11 @@
 
     <style>
         /* --------------------------------------------------
-           幻魔文字Webフォント定義（Genmamoji1.otf）
+           幻魔文字Webフォント定義（Genmamoji2.otf）
         -------------------------------------------------- */
         @font-face {
             font-family: 'GenmaFont';
-            src: url('Genmamoji1.otf') format('opentype');
+            src: url('Genmamoji2.otf') format('opentype');
             font-weight: normal;
             font-style: normal;
         }
@@ -383,7 +383,7 @@ function loadAllHighScores() {
 
     if (savedNoAssist) {
         bestTimes['no-assist'] = parseFloat(savedNoAssist);
-        document.getElementById("highscore-no-assist").innerText = `👑 最速: -- 秒`;
+        document.getElementById("highscore-no-assist").innerText = `👑 最速: ${bestTimes['no-assist'].toFixed(2)} 秒`;
     } else {
         document.getElementById("highscore-no-assist").innerText = `👑 最速: -- 秒`;
     }
@@ -622,7 +622,7 @@ window.addEventListener("keydown", (e) => {
             isAnimating = true;
             document.getElementById("utsuro-img").src = "utsuro_clear.png";
             
-            /* 正解時のPNG表示時間を600ミリ秒（0.6秒）に延長 */
+            /* 正解時のPNG表示時間：600ミリ秒（0.6秒） */
             setTimeout(() => {
                 document.getElementById("utsuro-img").src = "utsuro_normal.png";
                 isAnimating = false;
