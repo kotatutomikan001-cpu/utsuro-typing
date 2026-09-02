@@ -113,7 +113,7 @@
         #kana-display {
             font-size: 16px;
             color: #888888;
-            opacity: 0.3; /* 透明度を30%にしてかなり薄く設定 */
+            opacity: 0.3;
             letter-spacing: 1px;
             margin-bottom: 15px;
             min-height: 22px;
@@ -172,6 +172,16 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
+        }
+        .btn-retire {
+            background-color: #757575;
+            margin-top: 20px;
+            padding: 8px 20px;
+            font-size: 14px;
+            border-radius: 15px;
+        }
+        .btn-retire:hover {
+            background-color: #616161;
         }
         
         .highscore-display {
@@ -250,6 +260,11 @@
         <!-- ローマ字入力表示エリア（アシストなしの時は非表示） -->
         <div id="typing-display"></div>
         <div id="score-display">進捗: <span id="progress">0</span> / 10 | 経過時間: <span id="timer">0.00</span>秒</div>
+        
+        <!-- リタイア（タイトルへ戻る）ボタン -->
+        <div>
+            <button id="btn-retire" class="btn-retire" onclick="retireGame()">タイトルへ戻る</button>
+        </div>
     </div>
 </div>
 
@@ -368,7 +383,7 @@ function loadAllHighScores() {
 
     if (savedNoAssist) {
         bestTimes['no-assist'] = parseFloat(savedNoAssist);
-        document.getElementById("highscore-no-assist").innerText = `👑 最速: ${bestTimes['no-assist'].toFixed(2)} 秒`;
+        document.getElementById("highscore-no-assist").innerText = `👑 最速: -- 秒`;
     } else {
         document.getElementById("highscore-no-assist").innerText = `👑 最速: -- 秒`;
     }
@@ -431,6 +446,17 @@ function startGame(mode) {
     }, 50);
 
     nextWord();
+}
+
+function retireGame() {
+    if (confirm("タイトル画面に戻りますか？")) {
+        clearInterval(timerInterval);
+        isPlaying = false;
+        bgm.pause();
+        
+        document.getElementById("game-screen").style.display = "none";
+        document.getElementById("start-screen").style.display = "block";
+    }
 }
 
 function applyHepburnMacron(kana) {
