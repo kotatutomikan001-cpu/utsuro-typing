@@ -155,29 +155,15 @@
             margin: 20px 0;
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 20px;
         }
-        .btn-easy { background-color: #4caf50; }
-        .btn-normal { background-color: #2196f3; }
-        .btn-hard { background-color: #ff5722; }
+        .btn-assist { background-color: #4caf50; }
+        .btn-no-assist { background-color: #ff5722; }
         .btn-share {
             background-color: #000000;
             margin-top: 15px;
             padding: 10px 25px;
             font-size: 16px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .option-container {
-            margin: 15px 0;
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-        }
-        .option-container label {
-            cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -218,28 +204,16 @@
 
         <div id="error-message"></div>
 
-        <!-- オプション設定：ローマ字ガイドの表示切り替え -->
-        <div class="option-container">
-            <label>
-                <input type="checkbox" id="toggle-roma" checked>
-                入力ガイド（ローマ字）を表示する
-            </label>
-        </div>
-
-        <p>挑戦する難易度を選択してください！</p>
+        <p>モードを選択して全10問の最速タイムに挑戦しよう！</p>
         
         <div class="difficulty-container">
             <div>
-                <button id="btn-easy" class="btn-easy" onclick="startGame('easy')" disabled>かんたん (90秒)</button>
-                <div id="highscore-easy" class="highscore-display">👑 最高: 0 点</div>
+                <button id="btn-assist" class="btn-assist" onclick="startGame('assist')" disabled>アシストあり<br><span style="font-size: 13px;">(アルファベット表示)</span></button>
+                <div id="highscore-assist" class="highscore-display">👑 最速: -- 秒</div>
             </div>
             <div>
-                <button id="btn-normal" class="btn-normal" onclick="startGame('normal')" disabled>ふつう (60秒)</button>
-                <div id="highscore-normal" class="highscore-display">👑 最高: 0 点</div>
-            </div>
-            <div>
-                <button id="btn-hard" class="btn-hard" onclick="startGame('hard')" disabled>むずかしい (30秒)</button>
-                <div id="highscore-hard" class="highscore-display">👑 最高: 0 点</div>
+                <button id="btn-no-assist" class="btn-no-assist" onclick="startGame('no-assist')" disabled>アシストなし<br><span style="font-size: 13px;">(解読力テスト)</span></button>
+                <div id="highscore-no-assist" class="highscore-display">👑 最速: -- 秒</div>
             </div>
         </div>
         
@@ -247,14 +221,14 @@
         
         <div id="result-area" style="display: none;">
             <p id="final-score-text" style="font-size: 20px; font-weight: bold; margin-top: 20px; color: #1a237e;"></p>
-            <p id="new-record-text" style="font-size: 18px; font-weight: bold; color: #e53935; display: none; margin-top: 5px;">🎉 この難易度での最高記録更新！！</p>
+            <p id="new-record-text" style="font-size: 18px; font-weight: bold; color: #e53935; display: none; margin-top: 5px;">🎉 最速記録更新！！</p>
             <button class="btn-share" onclick="shareOnX()">𝕏 結果をポストする</button>
         </div>
     </div>
 
     <div id="game-screen" style="display: none;">
         <div id="difficulty-badge"></div>
-        
+
         <div class="game-layout">
             <div class="image-area">
                 <img id="utsuro-img" src="utsuro_normal.png" alt="氷室うつろ">
@@ -270,7 +244,7 @@
         
         <!-- ローマ字入力表示エリア -->
         <div id="typing-display"></div>
-        <div id="score-display">残り時間: <span id="timer">60</span>秒 | スコア: <span id="score">0</span></div>
+        <div id="score-display">進捗: <span id="progress">0</span> / 10 | 経過時間: <span id="timer">0.00</span>秒</div>
     </div>
 </div>
 
@@ -278,6 +252,7 @@
 
 <script>
 const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8LcvFteNKwd7-XOLg3aJKG1QOQGxeAvqx3ZeTrs4RMfF7PYzSQwRnhQDnSS_psFW700l36MHWreuB/pub?gid=0&single=true&output=csv";
+const TOTAL_QUESTIONS = 10;
 
 let wordList = []; 
 
@@ -323,15 +298,16 @@ let remainingKana = "";
 let currentRomaOptions = []; 
 let displayRoma = "";        
 let typedRoma = "";         
-let score = 0;
-let timeLeft = 60;
+let questionCount = 0;
+let startTime = 0;
+let elapsedTime = 0;
 let timerInterval;
 let isPlaying = false;
 let isAnimating = false;
 let questionPool = [];
 
-let currentDifficulty = 'normal';
-let highScores = { easy: 0, normal: 0, hard: 0 };
+let currentMode = 'assist';
+let bestTimes = { assist: null, 'no-assist': null };
 
 const bgm = document.getElementById("bgm");
 
@@ -365,10 +341,8 @@ async function loadWordListFromSpreadsheet() {
         
         wordList = loadedWords;
         document.getElementById("error-message").innerText = ""; 
-        
-        document.getElementById("btn-easy").disabled = false;
-        document.getElementById("btn-normal").disabled = false;
-        document.getElementById("btn-hard").disabled = false;
+        document.getElementById("btn-assist").disabled = false;
+        document.getElementById("btn-no-assist").disabled = false;
         
     } catch (error) {
         console.error(error);
@@ -377,55 +351,51 @@ async function loadWordListFromSpreadsheet() {
 }
 
 function loadAllHighScores() {
-    highScores.easy = parseInt(localStorage.getItem("utsuro_typing_hs_easy") || 0, 10);
-    highScores.normal = parseInt(localStorage.getItem("utsuro_typing_hs_normal") || 0, 10);
-    highScores.hard = parseInt(localStorage.getItem("utsuro_typing_hs_hard") || 0, 10);
+    const savedAssist = localStorage.getItem("utsuro_typing_genma_best_assist");
+    const savedNoAssist = localStorage.getItem("utsuro_typing_genma_best_noassist");
     
-    document.getElementById("highscore-easy").innerText = `👑 最高: ${highScores.easy} 点`;
-    document.getElementById("highscore-normal").innerText = `👑 最高: ${highScores.normal} 点`;
-    document.getElementById("highscore-hard").innerText = `👑 最高: ${highScores.hard} 点`;
+    if (savedAssist) {
+        bestTimes.assist = parseFloat(savedAssist);
+        document.getElementById("highscore-assist").innerText = `👑 最速: ${bestTimes.assist.toFixed(2)} 秒`;
+    } else {
+        document.getElementById("highscore-assist").innerText = `👑 最速: -- 秒`;
+    }
+
+    if (savedNoAssist) {
+        bestTimes['no-assist'] = parseFloat(savedNoAssist);
+        document.getElementById("highscore-no-assist").innerText = `👑 最速: ${bestTimes['no-assist'].toFixed(2)} 秒`;
+    } else {
+        document.getElementById("highscore-no-assist").innerText = `👑 最速: -- 秒`;
+    }
 }
 
 loadAllHighScores();
 loadWordListFromSpreadsheet();
 
-function shufflePool() {
-    questionPool = [...wordList];
-    for (let i = questionPool.length - 1; i > 0; i--) {
+function prepareQuestions() {
+    const shuffled = [...wordList];
+    for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [questionPool[i], questionPool[j]] = [questionPool[j], questionPool[i]];
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
+    questionPool = shuffled.slice(0, TOTAL_QUESTIONS);
 }
 
-function startGame(diff) {
-    currentDifficulty = diff;
+function startGame(mode) {
+    currentMode = mode;
+    prepareQuestions();
+    
     const badge = document.getElementById("difficulty-badge");
-    const kanaDisplay = document.getElementById("kana-display");
     const typingDisplay = document.getElementById("typing-display");
-    const showRoma = document.getElementById("toggle-roma").checked;
 
-    // ローマ字表示の切り替え設定
-    if (showRoma) {
+    if (mode === 'assist') {
+        badge.innerText = "アシストありモード";
+        badge.style.backgroundColor = "#4caf50";
         typingDisplay.style.display = "block";
     } else {
-        typingDisplay.style.display = "none";
-    }
-
-    if (diff === 'easy') {
-        timeLeft = 90;
-        badge.innerText = "かんたんモード (90秒)";
-        badge.style.backgroundColor = "#4caf50";
-        kanaDisplay.style.visibility = "visible";
-    } else if (diff === 'hard') {
-        timeLeft = 30;
-        badge.innerText = "むずかしいモード (30秒)";
+        badge.innerText = "アシストなしモード";
         badge.style.backgroundColor = "#ff5722";
-        kanaDisplay.style.visibility = "hidden"; 
-    } else {
-        timeLeft = 60;
-        badge.innerText = "ふつうモード (60秒)";
-        badge.style.backgroundColor = "#2196f3";
-        kanaDisplay.style.visibility = "visible";
+        typingDisplay.style.display = "none";
     }
 
     document.getElementById("start-screen").style.display = "none";
@@ -433,12 +403,8 @@ function startGame(diff) {
     document.getElementById("new-record-text").style.display = "none";
     document.getElementById("game-screen").style.display = "block";
     
-    score = 0;
-    isPlaying = true;
-    isAnimating = false;
-    document.getElementById("score").innerText = score;
-    document.getElementById("timer").innerText = timeLeft;
-    
+    questionCount = 0;
+    document.getElementById("progress").innerText = questionCount;
     document.getElementById("utsuro-img").src = "utsuro_normal.png";
     
     bgm.volume = 0.2;
@@ -447,14 +413,16 @@ function startGame(diff) {
         console.log("BGMの再生に失敗しました");
     });
 
-    shufflePool();
-    nextWord();
+    isPlaying = true;
+    isAnimating = false;
     
+    startTime = Date.now();
     timerInterval = setInterval(() => {
-        timeLeft--;
-        document.getElementById("timer").innerText = timeLeft;
-        if (timeLeft <= 0) endGame();
-    }, 1000);
+        elapsedTime = (Date.now() - startTime) / 1000;
+        document.getElementById("timer").innerText = elapsedTime.toFixed(2);
+    }, 50);
+
+    nextWord();
 }
 
 function applyHepburnMacron(kana) {
@@ -496,14 +464,17 @@ function applyHepburnMacron(kana) {
 
 function nextWord() {
     if (questionPool.length === 0) {
-        shufflePool();
+        endGame();
+        return;
     }
+    
     currentWord = questionPool.pop();
+    questionCount++;
+    document.getElementById("progress").innerText = questionCount;
     
     remainingKana = applyHepburnMacron(currentWord.kana);
     typedRoma = "";
     
-    /* 出題表示をかな（幻魔文字適用）に変更し、サブテキストに漢字をセット */
     document.getElementById("kanji-display").innerText = currentWord.kana;
     document.getElementById("kana-display").innerText = currentWord.kanji; 
     
@@ -614,9 +585,6 @@ window.addEventListener("keydown", (e) => {
         updateDisplay();
         
         if (remainingKana.length === 0 && currentRomaOptions.length === 0) {
-            score += 10;
-            document.getElementById("score").innerText = score;
-            
             isAnimating = true;
             document.getElementById("utsuro-img").src = "utsuro_clear.png";
             
@@ -624,7 +592,7 @@ window.addEventListener("keydown", (e) => {
                 document.getElementById("utsuro-img").src = "utsuro_normal.png";
                 isAnimating = false;
                 nextWord();
-            }, 400);
+            }, 300);
         }
     }
 });
@@ -632,24 +600,22 @@ window.addEventListener("keydown", (e) => {
 function endGame() {
     clearInterval(timerInterval);
     isPlaying = false;
-    
     bgm.pause();
     
+    const finalTime = elapsedTime.toFixed(2);
+    const modeName = currentMode === 'assist' ? "アシストあり" : "アシストなし";
+    const storageKey = currentMode === 'assist' ? "utsuro_typing_genma_best_assist" : "utsuro_typing_genma_best_noassist";
+    const pastBest = bestTimes[currentMode];
+
     document.getElementById("start-screen").style.display = "block";
     document.getElementById("game-screen").style.display = "none";
     document.getElementById("result-area").style.display = "block";
     
-    let diffName = "ふつう";
-    if (currentDifficulty === 'easy') diffName = "かんたん";
-    if (currentDifficulty === 'hard') diffName = "むずかしい";
+    document.getElementById("final-score-text").innerText = `クリアタイム（${modeName}）: ${finalTime} 秒`;
     
-    document.getElementById("final-score-text").innerText = `今回のスコア（${diffName}）: ${score} 点`;
-    
-    const storageKey = "utsuro_typing_hs_" + currentDifficulty;
-    const pastHighScore = highScores[currentDifficulty];
-    
-    if (score > pastHighScore) {
-        localStorage.setItem(storageKey, score);
+    if (pastBest === null || parseFloat(finalTime) < pastBest) {
+        bestTimes[currentMode] = parseFloat(finalTime);
+        localStorage.setItem(storageKey, bestTimes[currentMode]);
         document.getElementById("new-record-text").style.display = "block";
     } else {
         document.getElementById("new-record-text").style.display = "none";
@@ -657,18 +623,18 @@ function endGame() {
     
     loadAllHighScores();
     
-    alert(`タイムアップ！あなたのスコアは ${score} でした！`);
+    setTimeout(() => {
+        alert(`10問クリア！タイムは ${finalTime} 秒でした！`);
+    }, 100);
 }
 
 function shareOnX() {
-    let diffName = "ふつう";
-    if (currentDifficulty === 'easy') diffName = "かんたん";
-    if (currentDifficulty === 'hard') diffName = "むずかしい";
-    
+    const finalTime = elapsedTime.toFixed(2);
+    const modeName = currentMode === 'assist' ? "アシストあり" : "アシストなし";
     const gameUrl = window.location.href;
     
-    const text = `氷室うつろタイピングゲーム（${diffName}モード）で、スコア【 ${score} 点 】を達成しました！\nみんなも推しの語録をタイピングしよう！\n`;
-    const hashtags = "氷室うつろ,タイピングゲーム";
+    const text = `氷室うつろタイピングゲーム（幻魔文字・${modeName}）をクリア！\nタイム: 【 ${finalTime} 秒 】\n幻魔文字の解読速度に挑戦しよう！\n`;
+    const hashtags = "氷室うつろ,タイピングゲーム,幻魔文字";
     
     const shareUrl = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}&hashtags=${encodeURIComponent(hashtags)}`;
     
