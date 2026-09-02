@@ -23,12 +23,11 @@
 
     <style>
         /* --------------------------------------------------
-           幻魔文字Webフォント定義
-           ※使用するフォントファイル名に合わせてファイル名を変更してください
+           幻魔文字Webフォント定義（Genmamoji1.otf）
         -------------------------------------------------- */
         @font-face {
             font-family: 'GenmaFont';
-            src: url('genma_font.ttf') format('truetype');
+            src: url('Genmamoji1.otf') format('opentype');
             font-weight: normal;
             font-style: normal;
         }
@@ -104,7 +103,7 @@
         -------------------------------------------------- */
         #kanji-display {
             font-family: 'GenmaFont', 'Helvetica Neue', Arial, sans-serif;
-            font-size: 38px; /* 幻魔文字が見やすいよう少し大きめに調整 */
+            font-size: 38px;
             font-weight: bold;
             margin-bottom: 5px;
             color: #1a237e;
@@ -244,7 +243,9 @@
             </div>
             
             <div class="text-area">
+                <!-- 出題表示（CSSにより幻魔文字化） -->
                 <div id="kanji-display"></div>
+                <!-- 読み（かな）表示エリア -->
                 <div id="kana-display"></div>
             </div>
         </div>
@@ -386,12 +387,12 @@ function startGame(diff) {
         timeLeft = 90;
         badge.innerText = "かんたんモード (90秒)";
         badge.style.backgroundColor = "#4caf50";
-        kanaDisplay.style.visibility = "visible"; // かなヒントを表示
+        kanaDisplay.style.visibility = "visible";
     } else if (diff === 'hard') {
         timeLeft = 30;
         badge.innerText = "むずかしいモード (30秒)";
         badge.style.backgroundColor = "#ff5722";
-        kanaDisplay.style.visibility = "hidden"; // むずかしいモードでは、解読力を試すため「かなヒント」を非表示
+        kanaDisplay.style.visibility = "hidden"; // むずかしいモードでは「かなヒント」を隠して解読力をテスト
     } else {
         timeLeft = 60;
         badge.innerText = "ふつうモード (60秒)";
@@ -613,7 +614,7 @@ function endGame() {
     if (currentDifficulty === 'easy') diffName = "かんたん";
     if (currentDifficulty === 'hard') diffName = "むずかしい";
     
-    document.getElementById("final-score-text").innerText = `今回のスコア（${diffName}）:${score} 点`;
+    document.getElementById("final-score-text").innerText = `今回のスコア（${diffName}）: ${score} 点`;
     
     const storageKey = "utsuro_typing_hs_" + currentDifficulty;
     const pastHighScore = highScores[currentDifficulty];
@@ -640,4 +641,11 @@ function shareOnX() {
     const text = `氷室うつろタイピングゲーム（${diffName}モード）で、スコア【 ${score} 点 】を達成しました！\nみんなも推しの語録をタイピングしよう！\n`;
     const hashtags = "氷室うつろ,タイピングゲーム";
     
-    const shareUrl = `
+    const shareUrl = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(gameUrl)}&hashtags=${encodeURIComponent(hashtags)}`;
+    
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+}
+</script>
+
+</body>
+</html>
