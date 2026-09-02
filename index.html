@@ -22,13 +22,15 @@
 
     <style>
         /* --------------------------------------------------
-           幻魔文字Webフォント定義（Genmamoji2.otf）
+           幻魔文字Webフォント定義（Genmamoji.otf）
+           内部のファミリー名に合わせて定義を最適化
         -------------------------------------------------- */
         @font-face {
             font-family: 'GenmaFont';
-            src: url('Genmamoji2.otf') format('opentype');
+            src: url('Genmamoji.otf') format('opentype');
             font-weight: normal;
             font-style: normal;
+            font-display: swap;
         }
 
         body {
@@ -97,11 +99,11 @@
             text-align: left;
         }
 
-        /* 出題表示エリア（幻魔文字適用） */
+        /* 出題表示エリア（幻魔文字を最優先で適用） */
         #kanji-display {
-            font-family: 'GenmaFont', 'Helvetica Neue', Arial, sans-serif;
-            font-size: 42px;
-            font-weight: bold;
+            font-family: 'GenmaFont', sans-serif !important;
+            font-size: 48px;
+            font-weight: normal;
             margin-bottom: 5px;
             color: #1a237e;
             min-height: 50px;
@@ -659,7 +661,7 @@ function endGame() {
     loadAllHighScores();
     
     setTimeout(() => {
-        alert(`10問クリア！タイムは ${finalTime} 秒でした！`);
+        alert(`10问クリア！タイムは ${finalTime} 秒でした！`);
     }, 100);
 }
 
