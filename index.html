@@ -23,7 +23,6 @@
     <style>
         /* --------------------------------------------------
            幻魔文字Webフォント定義（Genmamoji.otf）
-           内部のファミリー名に合わせて定義を最適化
         -------------------------------------------------- */
         @font-face {
             font-family: 'GenmaFont';
@@ -99,7 +98,7 @@
             text-align: left;
         }
 
-        /* 出題表示エリア（幻魔文字を最優先で適用） */
+        /* 出題表示エリア（幻魔文字適用） */
         #kanji-display {
             font-family: 'GenmaFont', sans-serif !important;
             font-size: 48px;
@@ -276,6 +275,20 @@
 const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS8LcvFteNKwd7-XOLg3aJKG1QOQGxeAvqx3ZeTrs4RMfF7PYzSQwRnhQDnSS_psFW700l36MHWreuB/pub?gid=0&single=true&output=csv";
 const TOTAL_QUESTIONS = 10;
 
+// 万が一スプレッドシート読み込みが失敗した時の予備データ
+const fallbackWordList = [
+    { kanji: "氷室うつろ", kana: "ひむろうつろ" },
+    { kanji: "鬼武者", kana: "おにむしゃ" },
+    { kanji: "幻魔文字", kana: "げんまもじ" },
+    { kanji: "タイピング", kana: "たいぴんぐ" },
+    { kanji: "星めぐり学園", kana: "ほしめぐりがくえん" },
+    { kanji: "配信", kana: "はいしん" },
+    { kanji: "最速記録", kana: "さいそくきろく" },
+    { kanji: "挑戦", kana: "ちょうせん" },
+    { kanji: "解読力", kana: "かいどくりょく" },
+    { kanji: "クリア", kana: "くりあ" }
+];
+
 let wordList = []; 
 
 const romanMap = {
@@ -357,37 +370,43 @@ async function loadWordListFromSpreadsheet() {
         }
         
         if (loadedWords.length === 0) {
-            document.getElementById("error-message").innerText = "⚠️ スプレッドシートにお題データが見つかりません";
-            return;
+            throw new Error("スプレッドシートにお題データが見つかりません");
         }
         
         wordList = loadedWords;
         document.getElementById("error-message").innerText = ""; 
-        document.getElementById("btn-assist").disabled = false;
-        document.getElementById("btn-no-assist").disabled = false;
         
     } catch (error) {
-        console.error(error);
-        document.getElementById("error-message").innerText = "⚠️ お題データの読み込みに失敗しました。URLの設定を確認してください。";
+        console.warn("スプレッドシート読み込み失敗。予備データを使用します:", error);
+        wordList = fallbackWordList;
+        document.getElementById("error-message").innerText = "⚠️ スプレッドシート読み込みに失敗したため予備お題で動作します";
+    } finally {
+        // 成功・失敗にかかわらずボタンを有効化してスタートできるようにする
+        document.getElementById("btn-assist").disabled = false;
+        document.getElementById("btn-no-assist").disabled = false;
     }
 }
 
 function loadAllHighScores() {
-    const savedAssist = localStorage.getItem("utsuro_typing_genma_best_assist");
-    const savedNoAssist = localStorage.getItem("utsuro_typing_genma_best_noassist");
-    
-    if (savedAssist) {
-        bestTimes.assist = parseFloat(savedAssist);
-        document.getElementById("highscore-assist").innerText = `👑 最速: ${bestTimes.assist.toFixed(2)} 秒`;
-    } else {
-        document.getElementById("highscore-assist").innerText = `👑 最速: -- 秒`;
-    }
+    try {
+        const savedAssist = localStorage.getItem("utsuro_typing_genma_best_assist");
+        const savedNoAssist = localStorage.getItem("utsuro_typing_genma_best_noassist");
+        
+        if (savedAssist) {
+            bestTimes.assist = parseFloat(savedAssist);
+            document.getElementById("highscore-assist").innerText = `👑 最速: ${bestTimes.assist.toFixed(2)} 秒`;
+        } else {
+            document.getElementById("highscore-assist").innerText = `👑 最速: -- 秒`;
+        }
 
-    if (savedNoAssist) {
-        bestTimes['no-assist'] = parseFloat(savedNoAssist);
-        document.getElementById("highscore-no-assist").innerText = `👑 最速: ${bestTimes['no-assist'].toFixed(2)} 秒`;
-    } else {
-        document.getElementById("highscore-no-assist").innerText = `👑 最速: -- 秒`;
+        if (savedNoAssist) {
+            bestTimes['no-assist'] = parseFloat(savedNoAssist);
+            document.getElementById("highscore-no-assist").innerText = `👑 最速: ${bestTimes['no-assist'].toFixed(2)} 秒`;
+        } else {
+            document.getElementById("highscore-no-assist").innerText = `👑 最速: -- 秒`;
+        }
+    } catch(e) {
+        console.error("ローカルストレージの読み込みエラー:", e);
     }
 }
 
@@ -661,7 +680,7 @@ function endGame() {
     loadAllHighScores();
     
     setTimeout(() => {
-        alert(`10问クリア！タイムは ${finalTime} 秒でした！`);
+        alert(`10問クリア！タイムは ${finalTime} 秒でした！`);
     }, 100);
 }
 
