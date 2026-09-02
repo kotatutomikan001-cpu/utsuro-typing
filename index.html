@@ -7,7 +7,6 @@
     <script>
         const GA_TRACKING_ID = "G-MQD0CVKK5X"; // ★ここを主のIDに書き換えてね★
 
-        // Googleアナリティクスのシステムを自動で読み込む魔法のコードです
         if (GA_TRACKING_ID !== "G-XXXXXXXXXX") {
             const gaScript = document.createElement('script');
             gaScript.async = true;
@@ -98,12 +97,10 @@
             text-align: left;
         }
 
-        /* --------------------------------------------------
-           出題表示エリア（幻魔文字適用）
-        -------------------------------------------------- */
+        /* 出題表示エリア（幻魔文字適用） */
         #kanji-display {
             font-family: 'GenmaFont', 'Helvetica Neue', Arial, sans-serif;
-            font-size: 38px;
+            font-size: 42px;
             font-weight: bold;
             margin-bottom: 5px;
             color: #1a237e;
@@ -173,6 +170,19 @@
             gap: 8px;
         }
         
+        .option-container {
+            margin: 15px 0;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        .option-container label {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         .highscore-display {
             font-size: 15px;
             color: #ffb300;
@@ -207,6 +217,14 @@
         </div>
 
         <div id="error-message"></div>
+
+        <!-- オプション設定：ローマ字ガイドの表示切り替え -->
+        <div class="option-container">
+            <label>
+                <input type="checkbox" id="toggle-roma" checked>
+                入力ガイド（ローマ字）を表示する
+            </label>
+        </div>
 
         <p>挑戦する難易度を選択してください！</p>
         
@@ -243,13 +261,14 @@
             </div>
             
             <div class="text-area">
-                <!-- 出題表示（CSSにより幻魔文字化） -->
+                <!-- 出題表示（kanaから出題・CSSにより幻魔文字化） -->
                 <div id="kanji-display"></div>
-                <!-- 読み（かな）表示エリア -->
+                <!-- 補足用（元の漢字表示） -->
                 <div id="kana-display"></div>
             </div>
         </div>
         
+        <!-- ローマ字入力表示エリア -->
         <div id="typing-display"></div>
         <div id="score-display">残り時間: <span id="timer">60</span>秒 | スコア: <span id="score">0</span></div>
     </div>
@@ -382,6 +401,15 @@ function startGame(diff) {
     currentDifficulty = diff;
     const badge = document.getElementById("difficulty-badge");
     const kanaDisplay = document.getElementById("kana-display");
+    const typingDisplay = document.getElementById("typing-display");
+    const showRoma = document.getElementById("toggle-roma").checked;
+
+    // ローマ字表示の切り替え設定
+    if (showRoma) {
+        typingDisplay.style.display = "block";
+    } else {
+        typingDisplay.style.display = "none";
+    }
 
     if (diff === 'easy') {
         timeLeft = 90;
@@ -392,7 +420,7 @@ function startGame(diff) {
         timeLeft = 30;
         badge.innerText = "むずかしいモード (30秒)";
         badge.style.backgroundColor = "#ff5722";
-        kanaDisplay.style.visibility = "hidden"; // むずかしいモードでは「かなヒント」を隠して解読力をテスト
+        kanaDisplay.style.visibility = "hidden"; 
     } else {
         timeLeft = 60;
         badge.innerText = "ふつうモード (60秒)";
@@ -475,8 +503,9 @@ function nextWord() {
     remainingKana = applyHepburnMacron(currentWord.kana);
     typedRoma = "";
     
-    document.getElementById("kanji-display").innerText = currentWord.kanji;
-    document.getElementById("kana-display").innerText = currentWord.kana; 
+    /* 出題表示をかな（幻魔文字適用）に変更し、サブテキストに漢字をセット */
+    document.getElementById("kanji-display").innerText = currentWord.kana;
+    document.getElementById("kana-display").innerText = currentWord.kanji; 
     
     parseNextRoma();
     displayRoma = makeDefaultRoma(remainingKana);
