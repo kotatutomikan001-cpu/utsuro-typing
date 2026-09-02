@@ -112,15 +112,14 @@
             word-break: break-all;
         }
         
-        /* 補足漢字表記（うっすら薄く表示） */
+        /* 補足漢字表記（デフォルトスタイル） */
         #kana-display {
-            font-size: 16px;
-            color: #888888;
-            opacity: 0.3;
+            font-size: 18px;
             letter-spacing: 1px;
             margin-bottom: 15px;
             min-height: 22px;
-            font-weight: normal;
+            font-weight: bold;
+            transition: color 0.1s, opacity 0.1s;
         }
         
         #typing-display {
@@ -278,7 +277,7 @@
             <div class="text-area">
                 <!-- 出題表示（kanaから出題・CSSにより幻魔文字化） -->
                 <div id="kanji-display"></div>
-                <!-- 補足用（薄めの漢字表示エリア：アシストなしの時は通常非表示、正解時一瞬表示） -->
+                <!-- 補足用（漢字表示エリア） -->
                 <div id="kana-display"></div>
             </div>
         </div>
@@ -619,6 +618,16 @@ function updateDisplay() {
     if (currentMode === 'assist' || isAnimating) {
         html = `<span class="typed">${typedRoma}</span><span class="untyped">${displayRoma.substring(typedRoma.length)}</span>`;
         kanaDisplay.style.display = "block";
+        
+        if (isAnimating && currentMode === 'no-assist') {
+            // アシストなしモードの正解時（チル見せ）：はっきり見える濃い青文字に指定
+            kanaDisplay.style.color = "#1a237e";
+            kanaDisplay.style.opacity = "1.0";
+        } else {
+            // アシストありモードの通常プレイ時：うっすら薄い表示
+            kanaDisplay.style.color = "#888888";
+            kanaDisplay.style.opacity = "0.3";
+        }
     } else {
         // アシストなしモードの通常プレイ時：伏字（●）表示、補足漢字表記は隠す
         const typedMask = "●".repeat(typedRoma.length);
