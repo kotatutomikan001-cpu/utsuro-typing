@@ -640,7 +640,8 @@ function startGame(mode) {
     document.getElementById("progress").innerText = questionCount;
     document.getElementById("utsuro-img").src = "utsuro_normal.png";
     
-    bgm.volume = 0.2;
+    // モードに応じてBGMの音量を調整（表モード: 0.2 / 裏モード: 0.1）
+    bgm.volume = isOnimushaMode ? 0.1 : 0.2;
     bgm.currentTime = 0; 
     bgm.play().catch(err => {
         console.log("BGMの再生に失敗しました");
