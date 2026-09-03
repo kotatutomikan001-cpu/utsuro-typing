@@ -46,6 +46,7 @@
             height: 100vh;
             margin: 0;
             position: relative;
+            overflow: hidden;
             transition: background-image 0.5s ease;
         }
 
@@ -53,6 +54,33 @@
         body.onimusha-mode {
             background-color: #110505;
             background-image: radial-gradient(circle, #3a0d0d 0%, #000000 100%);
+        }
+
+        /* --------------------------------------------------
+           裏モード用 背景浮遊 幻魔文字コンテナ
+        -------------------------------------------------- */
+        #genma-bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .genma-floating-char {
+            position: absolute;
+            font-family: 'GenmaFont', sans-serif !important;
+            color: #ff3333;
+            opacity: 0.15;
+            font-size: 40px;
+            user-select: none;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+            transition: transform 12s linear, opacity 3s ease-in-out;
+            will-change: transform, opacity;
         }
 
         #game-container {
@@ -63,6 +91,7 @@
             text-align: center;
             width: 750px;
             position: relative;
+            z-index: 1;
             transition: all 0.3s ease;
         }
 
@@ -116,6 +145,45 @@
         }
         .btn-to-normal:hover {
             background-color: #3f51b5;
+        }
+
+        /* ミュート切替ボタン（右上に配置） */
+        .mute-switch-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 6px 14px;
+            font-size: 13px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #eceff1;
+            color: #37474f;
+            border: 1px solid #b0bec5;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        .mute-switch-btn:hover {
+            background-color: #cfd8dc;
+        }
+        .mute-switch-btn.is-muted {
+            background-color: #ef5350;
+            color: #ffffff;
+            border-color: #e53935;
+        }
+        .mute-switch-btn.is-muted:hover {
+            background-color: #d32f2f;
+        }
+
+        #game-container.onimusha-mode .mute-switch-btn {
+            background-color: #2a2020;
+            color: #f0e6d2;
+            border-color: #5c2c2c;
+        }
+        #game-container.onimusha-mode .mute-switch-btn.is-muted {
+            background-color: #b71c1c;
+            color: #ffffff;
+            border-color: #ff5252;
         }
 
         .pc-only-banner {
@@ -328,9 +396,15 @@
 </head>
 <body>
 
+<!-- 裏モード用 浮遊背景コンテナ -->
+<div id="genma-bg-container"></div>
+
 <div id="game-container">
-    <!-- モード切替ボタン -->
+    <!-- モード切替ボタン（左上） -->
     <button id="btn-mode-toggle" class="mode-switch-btn btn-to-oni" onclick="toggleOnimushaMode()">裏モードへ（鬼武者）</button>
+
+    <!-- ミュート切替ボタン（右上） -->
+    <button id="btn-mute-toggle" class="mute-switch-btn" onclick="toggleMute()">🔊 音量: ON</button>
 
     <h1 id="title-text">氷室うつろ タイピングゲーム（幻魔文字版）</h1>
     
@@ -355,7 +429,7 @@
             </div>
         </div>
         
-        <p style="color: #d32f2f; font-size: 14px; font-weight: bold; margin-bottom: 15px;">⚠️ 注：ボタンを押すと音楽が流れます</p>
+        <p style="color: #888888; font-size: 13px; margin-bottom: 15px;">※画面のどこかをクリックすると音が出ます</p>
         
         <div id="result-area" style="display: none;">
             <p id="final-score-text" style="font-size: 20px; font-weight: bold; margin-top: 20px; color: #1a237e;"></p>
@@ -441,6 +515,11 @@ const fallbackOnimushaWordList = [
 let normalWordList = [];   // 表モード用お題
 let onimushaWordList = []; // 裏モード用お題
 let isOnimushaMode = false; // 裏モードフラグ
+let isMuted = false;        // ミュート状態フラグ
+
+// 幻魔文字飛び交う背景用変数
+let genmaInterval = null;
+const genmaSampleChars = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ","を","ん"];
 
 const romanMap = {
     'あ':['a'], 'い':['i','yi'], 'う':['u','wu'], 'え':['e','ye'], 'お':['o'],
@@ -497,6 +576,63 @@ let bestTimes = { assist: null, 'no-assist': null };
 
 const bgm = document.getElementById("bgm");
 
+// ミュート初期化（ローカルストレージから復元）
+function initMuteSetting() {
+    const savedMute = localStorage.getItem("typing_genma_muted");
+    if (savedMute === "true") {
+        isMuted = true;
+    } else {
+        isMuted = false;
+    }
+    updateMuteButtonUI();
+}
+
+// ミュート状態切り替え関数
+function toggleMute() {
+    isMuted = !isMuted;
+    localStorage.setItem("typing_genma_muted", isMuted);
+    updateMuteButtonUI();
+
+    if (isMuted) {
+        bgm.pause();
+    } else {
+        playModeBGM();
+    }
+}
+
+// ミュートボタンの見た目を更新
+function updateMuteButtonUI() {
+    const muteBtn = document.getElementById("btn-mute-toggle");
+    if (isMuted) {
+        muteBtn.innerText = "🔇 音量: OFF";
+        muteBtn.classList.add("is-muted");
+        bgm.muted = true;
+    } else {
+        muteBtn.innerText = "🔊 音量: ON";
+        muteBtn.classList.remove("is-muted");
+        bgm.muted = false;
+    }
+}
+
+// BGM再生処理（タイトル画面表示時・モード切り替え時に実行）
+function playModeBGM() {
+    bgm.pause();
+    if (isOnimushaMode) {
+        bgm.src = "bgm_oni.mp3";
+        bgm.volume = 0.1;
+    } else {
+        bgm.src = "bgm.mp3";
+        bgm.volume = 0.2;
+    }
+    bgm.currentTime = 0;
+
+    if (!isMuted) {
+        bgm.play().catch(err => {
+            console.log("ユーザー操作を待機中（クリック後に自動再生されます）");
+        });
+    }
+}
+
 // 鬼武者（裏）モード切り替え関数
 function toggleOnimushaMode() {
     isOnimushaMode = !isOnimushaMode;
@@ -514,7 +650,7 @@ function toggleOnimushaMode() {
         titleText.innerText = "鬼武者 タイピングゲーム（幻魔文字・裏モード）";
         modeDesc.innerText = "鬼武者の世界観に特化した全10問の討伐タイムに挑戦しよう！";
         creditText.innerText = "フリーBGM DOVA-SYNDROME Sagittarius 使用";
-        bgm.src = "bgm_oni.mp3"; // 裏モード用BGM切り替え
+        startGenmaBgAnimation(); // 幻魔文字背景スタート
     } else {
         document.body.classList.remove("onimusha-mode");
         container.classList.remove("onimusha-mode");
@@ -523,10 +659,78 @@ function toggleOnimushaMode() {
         titleText.innerText = "氷室うつろ タイピングゲーム（幻魔文字版）";
         modeDesc.innerText = "モードを選択して全10問の最速タイムに挑戦しよう！";
         creditText.innerText = "フリーBGM DOVA-SYNDROME Morning 使用";
-        bgm.src = "bgm.mp3"; // 表モード用BGM切り替え
+        stopGenmaBgAnimation(); // 幻魔文字背景ストップ
     }
+    
+    // モード切り替えと同時に音楽をセット（ミュート時除く）
+    playModeBGM();
     loadAllHighScores();
 }
+
+// --------------------------------------------------
+// 裏モード用 幻魔文字飛び交う背景アニメーション処理
+// --------------------------------------------------
+function startGenmaBgAnimation() {
+    const bgContainer = document.getElementById("genma-bg-container");
+    bgContainer.innerHTML = "";
+    bgContainer.style.display = "block";
+
+    const numChars = 15; // 浮遊する文字の数
+    for (let i = 0; i < numChars; i++) {
+        const charElem = document.createElement("div");
+        charElem.className = "genma-floating-char";
+        
+        // ランダムな初期配置
+        const startX = Math.random() * 100;
+        const startY = Math.random() * 100;
+        const randomChar = genmaSampleChars[Math.floor(Math.random() * genmaSampleChars.length)];
+        
+        charElem.innerText = randomChar;
+        charElem.style.left = startX + "vw";
+        charElem.style.top = startY + "vh";
+        charElem.style.fontSize = (Math.random() * 40 + 30) + "px"; // 30px〜70px
+        
+        bgContainer.appendChild(charElem);
+
+        // ゆっくりランダム移動を開始
+        animateSingleChar(charElem);
+    }
+}
+
+function animateSingleChar(elem) {
+    if (!isOnimushaMode) return;
+
+    // 移動先のランダムな座標計算
+    const targetX = (Math.random() * 120 - 10); // -10vw 〜 110vw
+    const targetY = (Math.random() * 120 - 10); // -10vh 〜 110vh
+    const duration = Math.random() * 10 + 12; // 12秒〜22秒の超ゆったりペース
+
+    elem.style.transition = `transform ${duration}s linear, opacity 3s ease-in-out`;
+    elem.style.transform = `translate(${targetX - parseFloat(elem.style.left)}vw, ${targetY - parseFloat(elem.style.top)}vh) rotate(${Math.random() * 360}deg)`;
+    elem.style.opacity = (Math.random() * 0.2 + 0.08).toString(); // 透明度 0.08〜0.28
+
+    // アニメーション完了後に次の目的地へ
+    setTimeout(() => {
+        if (isOnimushaMode && elem.parentNode) {
+            // 文字を一定確率で変化させる
+            elem.innerText = genmaSampleChars[Math.floor(Math.random() * genmaSampleChars.length)];
+            animateSingleChar(elem);
+        }
+    }, duration * 1000);
+}
+
+function stopGenmaBgAnimation() {
+    const bgContainer = document.getElementById("genma-bg-container");
+    bgContainer.style.display = "none";
+    bgContainer.innerHTML = "";
+}
+
+// 初回画面クリック時に自動再生制限を解除してBGMを開始（ミュート時除く）
+window.addEventListener("click", () => {
+    if (bgm.paused && !isPlaying && !isMuted) {
+        playModeBGM();
+    }
+}, { once: true });
 
 // CSVパース共通ヘルパー
 function parseCSVData(csvText) {
@@ -603,8 +807,11 @@ function loadAllHighScores() {
     }
 }
 
+initMuteSetting();
 loadAllHighScores();
 loadAllWordLists();
+// ページ読み込み時にBGMを準備
+playModeBGM();
 
 function prepareQuestions() {
     const activeList = isOnimushaMode ? onimushaWordList : normalWordList;
@@ -635,17 +842,11 @@ function startGame(mode) {
     document.getElementById("new-record-text").style.display = "none";
     document.getElementById("game-screen").style.display = "block";
     document.getElementById("btn-mode-toggle").style.display = "none";
+    document.getElementById("btn-mute-toggle").style.display = "none";
     
     questionCount = 0;
     document.getElementById("progress").innerText = questionCount;
     document.getElementById("utsuro-img").src = "utsuro_normal.png";
-    
-    // モードに応じてBGMの音量を調整（表モード: 0.2 / 裏モード: 0.1）
-    bgm.volume = isOnimushaMode ? 0.1 : 0.2;
-    bgm.currentTime = 0; 
-    bgm.play().catch(err => {
-        console.log("BGMの再生に失敗しました");
-    });
 
     isPlaying = true;
     isAnimating = false;
@@ -663,11 +864,14 @@ function retireGame() {
     if (confirm("タイトル画面に戻りますか？")) {
         clearInterval(timerInterval);
         isPlaying = false;
-        bgm.pause();
         
         document.getElementById("game-screen").style.display = "none";
         document.getElementById("start-screen").style.display = "block";
         document.getElementById("btn-mode-toggle").style.display = "block";
+        document.getElementById("btn-mute-toggle").style.display = "block";
+        
+        // タイトルに戻ったらBGMを頭から再再生（ミュート時除く）
+        playModeBGM();
     }
 }
 
@@ -871,7 +1075,6 @@ window.addEventListener("keydown", (e) => {
 function endGame() {
     clearInterval(timerInterval);
     isPlaying = false;
-    bgm.pause();
     
     const finalTime = elapsedTime.toFixed(2);
     const modeName = currentMode === 'assist' ? "アシストあり" : "アシストなし";
@@ -883,6 +1086,7 @@ function endGame() {
     document.getElementById("game-screen").style.display = "none";
     document.getElementById("result-area").style.display = "block";
     document.getElementById("btn-mode-toggle").style.display = "block";
+    document.getElementById("btn-mute-toggle").style.display = "block";
     
     document.getElementById("final-score-text").innerText = `クリアタイム（${modeName}）: ${finalTime} 秒`;
     
@@ -910,11 +1114,9 @@ function shareOnX() {
     let hashtags = "";
 
     if (isOnimushaMode) {
-        // 裏モード：氷室うつろの名前を出さず、ハッシュタグは鬼武者と幻魔文字
         text = `鬼武者タイピングゲーム（幻魔文字・裏モード【${modeName}】）をクリア！\nタイム: 【 ${finalTime} 秒 】\n幻魔文字の解読速度に挑戦しよう！\n`;
         hashtags = "鬼武者,幻魔文字";
     } else {
-        // 表モード：従来の表示
         text = `氷室うつろタイピングゲーム（幻魔文字・表モード【${modeName}】）をクリア！\nタイム: 【 ${finalTime} 秒 】\n幻魔文字の解読速度に挑戦しよう！\n`;
         hashtags = "氷室うつろ,幻魔文字,鬼武者";
     }
